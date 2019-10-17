@@ -1,0 +1,50 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "7013664417bdea9817d80b1ba886ea02ceed919a7ac6bcaaaffbf1ca9ea8a0c7"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.python.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "colorzero": {
+            "hashes": [
+                "sha256:acba47119b5d8555680d3cda9afe6ccc5481385ccc3c00084dd973f7aa184599",
+                "sha256:e3c36d15b293de2b2f77ff54a5bd243fffac941ed0a5332d0697a6612a26a0a3"
+            ],
+            "version": "==1.1"
+        },
+        "emoji": {
+            "hashes": [
+                "sha256:60652d3a2dcee5b8af8acb097c31776fb6d808027aeb7221830f72cdafefc174"
+            ],
+            "index": "pypi",
+            "version": "==0.5.4"
+        },
+        "gpiozero": {
+            "hashes": [
+                "sha256:101044038e71cec8be2fa841d4cea9e50e7962e9fb0287f465298b59e3f06594",
+                "sha256:ae1a8dc4e6e793ffd8f900968f3290d218052c46347fa0c0503c65fabe422e4d"
+            ],
+            "index": "pypi",
+            "version": "==1.5.1"
+        },
+        "telegram": {
+            "hashes": [
+                "sha256:d405a0af4c868a8dbeae6d03e297e21c7ee6269e11e2ed3810e15544aba02591"
+            ],
+            "index": "pypi",
+            "version": "==0.0.1"
+        }
+    },
+    "develop": {}
+}
