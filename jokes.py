@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This program is dedicated to the public domain under the GNU GPLv3 license.
+
+"""
+Discription to be added after reworking the file
+"""
+
+
 import config
 import random
 import praw

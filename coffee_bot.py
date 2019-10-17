@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This program is dedicated to the public domain under the GNU GPLv3 license.
+
+"""
+First the Libraries are imported, then some usfull classes are definde and initiated.
+This is followed by some general functions, followed by more specific ones.
+At the end everything is bundeled together in the main fuctions,
+wich is call from "if __name__ == '__main__':" wich handels the arguments for the script.
+"""
+
 ### Imorting config file
 import config
 
