@@ -1,2 +1,4 @@
 #Ignoring the config file
 config.py
+.personal_gitignore
+__pycache__/
