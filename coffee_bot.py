@@ -75,6 +75,7 @@ import traceback
 import random
 import datetime
 import jokes
+from emoji import emojize
 
 #Config logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -406,7 +407,7 @@ def check(update, context):
 def cancel(update, context):
     user = update.message.from_user
     logger.debug("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('Okey, let\'s talk another timre :)', reply_markup = telegram.ReplyKeyboardRemove() )
+    update.message.reply_text('Okey, let\'s talk another time :smiley:', reply_markup = telegram.ReplyKeyboardRemove() )
     return ConversationHandler.END
 def rm(update, context):
     user = update.message.from_user
