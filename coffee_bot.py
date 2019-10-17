@@ -3,18 +3,21 @@
 # This program is dedicated to the public domain under the GNU GPLv3 license.
 
 """
-First Logging and
+First the argument parser is set up and configured.
+After importing all other libraries the logger initilased.
 
+The structure of the following code is, that first the classes are defined and initilased.
+This is followed by so general fuctions, that get more specific towards the bottom.
 
-First the Libraries are imported, then some usfull classes are definde and initiated.
-This is followed by some general functions, followed by more specific ones.
-At the end everything is bundeled together in the main fuctions,
-wich is call from "if __name__ == '__main__':" wich handels the arguments for the script.
+The main() function then brings everything together and confgures the bot,
+while the (if __name__ == '__main__':) deals with handling the arguments from the argument parser and prepaing the enviroment.
 """
 ### Imorting config file
 import config
 from argparse import ArgumentParser
 import logging
+import sys
+import os
 
 #Add ArgumentParser
 def str2bool(v):
@@ -53,10 +56,7 @@ parser.add_argument("-t", dest='mode', default=False, action='store_true',
                     help="This will make the bot run in test mode.")
 args = parser.parse_args()
 
-
-
 ### Libraries
-import sys
 from gpiozero import Button
 import telegram
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
@@ -64,20 +64,17 @@ from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, PicklePersistence, CallbackQueryHandler)
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import mention_html
+
 from threading import Thread
-import os
+from functools import wraps
+import traceback
 import random
 import datetime
-import traceback
 import jokes
-from functools import wraps
-import attr
-
 
 #Config logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=args.level)
-
 logger = logging.getLogger(__name__)
 
 """
@@ -476,7 +473,6 @@ def timeSinceCoffee(update, context):
 
     update.message.reply_text(text, parse_mode = "Markdown")
 
-
 def updateCoffeeState(context):
     if brewingSig.is_pressed & heatingSig.is_pressed & (cm.brewing_MS == False):
         send("Coffee is being brewed")
@@ -501,7 +497,6 @@ def machineOff(context):
         send("The coffee machine is still on")
 def updateReddit(context):
     jokes.updateRedditDB()
-
 
 #Conversation handlers
 CHOOSING, CHECK  = range(2)
