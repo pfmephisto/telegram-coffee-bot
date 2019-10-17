@@ -1,0 +1,600 @@
+### Imorting config file
+import config
+
+### Libraries
+import sys
+from gpiozero import Button
+import telegram
+from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
+                          ConversationHandler, PicklePersistence, CallbackQueryHandler)
+from telegram.ext.dispatcher import run_async
+from telegram.utils.helpers import mention_html
+from argparse import ArgumentParser
+from threading import Thread
+import os
+import logging
+import random
+import datetime
+import traceback
+import jokes
+from functools import wraps
+import attr
+
+
+#Config logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                     level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+"""
+Classes
+"""
+class storableSet(set):
+    instances = []
+    def __init__ (self, key, DB="User", s=()):
+        import weakref
+        self.__class__.instances.append(weakref.proxy(self))
+        logger.debug(f"Initiating class '{self.__class__.__name__} with key '{key} & DB '{DB}'")
+        super(storableSet, self).__init__(s)
+        self.key = key
+        self.DB = DB
+        self._set = set(s)
+    def __repr__(self):
+        return f"{self.__class__.__name__} with Key = '{self.key}' & DB = '{self.DB}'\n'{set(self)}'"
+    def load(self):
+        import shelve
+        shelve = shelve.open(self.DB)
+        logger.debug(F"Going to load '{self.key}' from '{self.DB}'")
+        try:
+            super(storableSet, self).__init__(set(shelve[self.key]))
+            logger.debug(F"Sucsessfully loaded '{self.key}' from '{self.DB}'")
+        except Exception as e:
+            logger.error(F"Failed getting '{self.key}' from '{self.DB}'")
+        finally:
+            shelve.close()
+    def store(self):
+        import shelve
+        shelve = shelve.open(self.DB)
+        logger.debug(F"Atempting to store '{self.key}' in '{self.DB}'")
+        try:
+            shelve[self.key] = set(self)
+            logger.debug(F"Sucsessfully stored '{self.key}' in '{self.DB}'")
+        except Exception as e:
+            logger.error(F"Failed saving '{self.key}' in '{self.DB}'")
+        finally:
+            shelve.close()
+class storableList(list):
+    instances = []
+    def __init__ (self, key, DB="User", s=[]):
+        import weakref
+        self.__class__.instances.append(weakref.proxy(self))
+        logger.debug(f"Initiating class '{self.__class__.__name__} with key '{key} & DB '{DB}'")
+        super(storableList, self).__init__(s)
+        self.key = key
+        self.DB = DB
+        self._set = list(s)
+    def __repr__(self):
+        return f"{self.__class__.__name__} with Key = '{self.key}' & DB = '{self.DB}'\n'{list(self)}'"
+    def load(self):
+        import shelve
+        shelve = shelve.open(self.DB)
+        logger.debug(F"Going to load '{self.key}' from '{self.DB}'")
+        try:
+            super(storableList, self).__init__(list(shelve[self.key]))
+            logger.debug(F"Sucsessfully loaded '{self.key}' from '{self.DB}'")
+        except Exception as e:
+            logger.error(F"Failed getting '{self.key}' from '{self.DB}'")
+        finally:
+            shelve.close()
+    def store(self):
+        import shelve
+        shelve = shelve.open(self.DB)
+        logger.debug(F"Atempting to store '{self.key}' in '{self.DB}'")
+        try:
+            shelve[self.key] = list(self)
+            logger.debug(F"Sucsessfully stored '{self.key}' in '{self.DB}'")
+        except Exception as e:
+            logger.error(F"Failed saving '{self.key}' in '{self.DB}'")
+        finally:
+            shelve.close()
+class password():
+    def __init__(self):
+        import random
+        val = random.randrange(1000, 9999)
+        self._val = int(val)
+    def change(self):
+        import random
+        val = random.randrange(1000, 9999)
+        self._val = int(val)
+    def __str__(self):
+        return str(self._val)
+class coffeeMachine:
+    name = None
+    state = None
+    lastCoffee = None
+
+    OFF, BREWING, READY, ERROR = range(4) #States for coffeemake staes
+    brewing_MS = coffeReady_MS = off_MS = error_MS = False #Messages
+
+    def __init__(self, name, state = OFF):
+        self.name = str(name)
+        self.state = state
+
+    def __str__(self):
+        return self.name
+    def __int__(self):
+        return int(self.state)
+
+    def chst(self, val):
+        self.state = val
+        if(val == self.READY):
+            self.lastCoffee = datetime.datetime.now()
+    def strState(self):
+        text =[
+        'I hope your are ready to surfive the ice age',
+        'Set a timer, coffee will be ready soon',
+        'Get it while it\'s hot',
+        'Oh no something has gone wrong',
+        ]
+        return text[self.state]
+
+    def resetSingals(self):
+        self.brewing_MS = self.coffeReady_MS = self.off_MS = self.error_MS = False
+    def setMS(self, SignalName):
+        self.resetSingals()
+        signals = ["brewing_MS","coffeReady_MS","off_MS", "error_MS"]
+        for sig in signals:
+            if(SignalName == sig):
+                exec('self.'+sig+" = True")
+
+"""
+Variable declaration
+"""
+# class isinstance
+cm = coffeeMachine("The CoffeeNator")
+my_chat_ids = storableSet(key="my_chat_ids")
+password = password()
+
+# GPIO pins
+brewingSig = Button(config.brewingPin)
+heatingSig = Button(config.heatingPin)
+
+"""
+Functions
+"""
+#General Fuctions
+def restrictedMember(func):
+    @wraps(func)
+    def wrapped(update, context, *args, **kwargs):
+        user_id = update.effective_user.id
+        if user_id not in my_chat_ids:
+            update.message.reply_text('You don\'t have purmission to do this.\nPlease signe in first')
+            logger.debug(f'Unauthorized access attempt by {update.effective_user.first_name} with ID: {user_id}')
+            return
+        return func(update, context, *args, **kwargs)
+    return wrapped
+def restrictedAdmin(func):
+    @wraps(func)
+    def wrapped(update, context, *args, **kwargs):
+        user_id = update.effective_user.id
+        if user_id not in config.adminIDs:
+            update.message.reply_text('You don\'t have purmission to do this.\nPlease signe in first')
+            logger.debug(f'Unauthorized access attempt by {update.effective_user.first_name} with ID: {user_id}')
+            return
+        return func(update, context, *args, **kwargs)
+    return wrapped
+def send_typing_action(func):
+    """Sends typing action while processing func command."""
+
+    @wraps(func)
+    def command_func(update, context, *args, **kwargs):
+        context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=ChatAction.TYPING)
+        return func(update, context,  *args, **kwargs)
+
+    return command_func
+def strfdelta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return fmt.format(**d)
+def shutdown(signum, frame):
+    import signal
+    logger.debug("Statring shoutdow routine")
+    if(args.mode == True):
+        logger.debug("Running in test mode. Nothing will be saved")
+    if (signum == signal.SIGINT) & (args.mode != True):
+        for i in storableSet.instances:
+            i.store()
+        for i in storableList.instances:
+            i.store()
+    if (signum == signal.SIGTERM) & (args.mode != True):
+        for i in storableSet.instances:
+            i.store()
+        for i in storableList.instances:
+            i.store()
+    if (signum == signal.SIGABRT) & (args.mode != True):
+        for i in storableSet.instances:
+            i.store()
+        for i in storableList.instances:
+            i.store()
+
+#Sent a Message
+def send(msg, chat_id=my_chat_ids, token=config.my_token):
+    if (len(my_chat_ids) > 0):
+        logger.debug('Sending messgae: ' + msg)
+        for chat_id in my_chat_ids:
+            bot.sendMessage(chat_id=chat_id, text=msg)
+    else:
+        logger.debug('There is no one to send a message to')
+#Non member Functions
+def help(update, context):
+    text =  """ This bot will inform you about the current state of coffee
+
+/help\t\t diplay this help message
+/start\t\t subscribe to the update list"""
+
+    user_id = update.effective_user.id
+    if user_id in my_chat_ids:
+        text +="""\n
+/time\t\t get an update on the current state
+/news\t\t play a game"""
+    if user_id in config.adminIDs:
+        text += """\n
+/pw\t\t request the current password
+/new\t\t set a new global password"""
+    if user_id in config.devs:
+        text += """\n
+/restart\t\t will restart the bot"""
+    update.message.reply_text(text)
+def start(update, context):
+    reply_keyboard = [['subscribe', 'unsubscribe', '/cancel']]
+
+    update.message.reply_text(
+        'Hi! My name is CoffeeBot.\n'
+        'I will provide you with updates of fresh coffee.\n'
+        'Send /cancel to stop talking to me.\n\n'
+        'Do you wnat to subscribe or unsubscribe?',
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return CHOOSING
+def button(update, context):
+    query = update.callback_query
+
+    #News Game
+    if ((query.data == 'NewsTrue') | (query.data == 'NewsFalse')):
+        id = query['message']['chat']['id']
+        j = ""
+        try:
+            j = context.user_data["currentQuestion"]
+        except KeyError:
+            update.message.reply_text('There has been an Error.\nYour anser was not recived')
+            return
+        a = j['truth']
+        q = j['headline']
+        if ('News'+a == query.data):
+            query.edit_message_text('*Is this a real news aretical?*\n'+q, parse_mode = "Markdown")
+            bot.send_animation(id, animation=jokes.randomGIF('success'), parse_mode='Markdown', caption='*You are correct*')
+        else:
+            query.edit_message_text('*Is this a real news aretical?*\n'+q, parse_mode = "Markdown")
+            bot.send_animation(id, animation=jokes.randomGIF('facepam'), parse_mode='Markdown', caption='*You are wrong*')
+
+        url = 'https://www.reddit.com'+j['url']
+        bot.send_message(id, parse_mode='HTML', text='<a href="'+url+'">link</a>')
+    #Other options
+def error(update, context):
+    """Log Errors caused by Updates."""
+    """
+    logger.warning('Update "%s" caused error "%s"', update, error)
+    return ConversationHandler.END
+    """
+    # add all the dev user_ids in this list. You can also add ids of channels or groups.
+    devs = [117226628]
+    # we want to notify the user of this problem. This will always work, but not notify users if the update is an
+    # callback or inline query, or a poll update. In case you want this, keep in mind that sending the message
+    # could fail
+    if update.effective_message:
+        text = "Hey. I'm sorry to inform you that an error happened while I tried to handle your update. " \
+               "My developer(s) will be notified."
+        update.effective_message.reply_text(text)
+    # This traceback is created with accessing the traceback object from the sys.exc_info, which is returned as the
+    # third value of the returned tuple. Then we use the traceback.format_tb to get the traceback as a string, which
+    # for a weird reason separates the line breaks in a list, but keeps the linebreaks itself. So just joining an
+    # empty string works fine.
+    trace = "".join(traceback.format_tb(sys.exc_info()[2]))
+    # lets try to get as much information from the telegram update as possible
+    payload = ""
+    # normally, we always have an user. If not, its either a channel or a poll update.
+    if update.effective_user:
+        payload += f' with the user {mention_html(update.effective_user.id, update.effective_user.first_name)}'
+    # there are more situations when you don't get a chat
+    if update.effective_chat:
+        payload += f' within the chat <i>{update.effective_chat.title}</i>'
+        if update.effective_chat.username:
+            payload += f' (@{update.effective_chat.username})'
+    # but only one where you have an empty payload by now: A poll (buuuh)
+    if update.poll:
+        payload += f' with the poll id {update.poll.id}.'
+    # lets put this in a "well" formatted text
+    text = f"Hey.\n The error <code>{context.error}</code> happened{payload}. The full traceback:\n\n<code>{trace}" \
+           f"</code>"
+    # and send it to the dev(s)
+    for dev_id in devs:
+        context.bot.send_message(dev_id, text, parse_mode=ParseMode.HTML)
+    # we raise the error again, so the logger module catches it. If you don't use the logger module, use it.
+    raise
+
+#Conversation functions
+def sub(update, context):
+    user = update.message.from_user
+    logger.info("%s is trying to subscribe", user.first_name)
+    update.message.reply_text('Please enter the password that is beeing displayed', reply_markup= telegram.ReplyKeyboardRemove())
+    return CHECK
+def check(update, context):
+    reply_keyboard = [['subscribe', 'unsubscribe', '/cancel']]
+    user = update.message.from_user
+    if(update.message.text == str(password)):
+        logger.info("%s has entered the correct password", user.first_name)
+        try:
+            #DB.Add("Subscribers",update.message.chat["id"])
+            my_chat_ids.add(update.message.chat["id"])
+            logger.debug("%s has been added to the DB", user.first_name)
+            update.message.reply_text('You have sucsessfully signed up')
+            return ConversationHandler.END
+        except Exception as e:
+            logger.warning("%s could not to added to DB", user.first_name)
+            return ConversationHandler.END
+    else:
+        logger.info("%s Entered the wrong password", user.first_name)
+        update.message.reply_text('You have endered the wrong password\n'
+                                'what do you want to do?',
+                                reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+        return CHOOSING
+def cancel(update, context):
+    user = update.message.from_user
+    logger.debug("User %s canceled the conversation.", user.first_name)
+    update.message.reply_text('Okey, let\'s talk another timre :)', reply_markup = telegram.ReplyKeyboardRemove() )
+    return ConversationHandler.END
+def rm(update, context):
+    user = update.message.from_user
+    try:
+            #DB.Remove("Subscribers", update.message.chat["id"])
+            my_chat_ids.remove(update.message.chat["id"])
+            update.message.reply_text('You have sucsessfully been removed from the mailing list')
+            logger.info("%s has been removed from the BD", user.first_name)
+            return ConversationHandler.END
+    except Exception as e:
+        logger.warning("%s is not in the BD", user.first_name)
+        return ConversationHandler.END
+
+#Functions for members
+@restrictedAdmin
+def err(update, context):
+    raise Exception('ErrorCommand')
+@restrictedMember
+def getPW(update, context):
+    user = update.message.from_user
+    logger.debug("%s has requested the Password", user.first_name)
+    update.message.reply_text('The password is: '+ str(password))
+@restrictedMember
+def newPW(update, context):
+    user = update.message.from_user
+    logger.debug("%s is requesting to change password", user.first_name)
+
+    password.change()
+    update.message.reply_text('The password is now: '+ str(password))
+    logger.debug("%s is requesting to change password", user.first_name)
+    logger.info("This is the password: %s", password)
+@restrictedMember
+@send_typing_action
+def newsOrnot(update, context):
+    user = update.message.from_user
+    logger.debug("%s wats to play a news game", user.first_name)
+
+    j = jokes.maybeNews()
+    q = j['headline']
+
+    keyboard = [[InlineKeyboardButton("True", callback_data="NewsTrue"),
+                InlineKeyboardButton("Fake", callback_data="NewsFalse")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    context.user_data["currentQuestion"] = j
+
+    update.message.reply_text('*Is this a real news aretical?*\n'+q, reply_markup = reply_markup, parse_mode = "Markdown")
+@restrictedMember
+def timeSinceCoffee(update, context):
+    user = update.message.from_user
+    logger.debug(f"{user.first_name} Wants to know the time since the last coffee has been brewed")
+
+    text = ""
+    if (cm.lastCoffee == None):
+        text = 'No coffee has been made yet'
+        update.message.reply_text(text) #, parse_mode = "Markdown"
+        return
+
+    now = datetime.datetime.now()
+    timePast = now - cm.lastCoffee
+    text = strfdelta(timePast,  'It has been *{hours}* hours, *{minutes}* minutes \n'
+                                'and *{seconds}* seconds\n'
+                                'Since the last coffee has been made\n'
+                                '_But who\'s counting_'
+                                )  #{days} days {hours}:{minutes}:{seconds}'
+    if (cm.state is not None):
+        text += f"\n\n*State*: {cm.strState()}"
+
+    update.message.reply_text(text, parse_mode = "Markdown")
+
+
+def updateCoffeeState(context):
+    if brewingSig.is_pressed & heatingSig.is_pressed & (cm.brewing_MS == False):
+        send("Coffee is being brewed")
+        cm.chst(cm.BREWING)
+        cm.setMS('brewing_MS')
+    if (not brewingSig.is_pressed) & heatingSig.is_pressed & (cm.coffeReady_MS == False):
+        send("Coffee is ready")
+        cm.chst(cm.READY)
+        cm.setMS('coffeReady_MS')
+    if (not brewingSig.is_pressed) & (not heatingSig.is_pressed) & (cm.off_MS == False):
+        send("Coffee machine has been shut off")
+        cm.chst(cm.OFF)
+        cm.setMS('off_MS')
+    if brewingSig.is_pressed & (not heatingSig.is_pressed) & (cm.error_MS == False):
+        send("Coffee machine is malfunctioning")
+        cm.chst(cm.ERROR)
+        setMS('error_MS')
+def machineOff(context):
+    logger.debug(f"checking if the machine is off - State = {cm.state}")
+    if not(cm.state == cm.OFF):
+        logger.debug("Machine is still on sending message")
+        send("The coffee machine is still on")
+def updateReddit(context):
+    jokes.updateRedditDB()
+
+
+#Conversation handlers
+CHOOSING, CHECK  = range(2)
+conv_handler = ConversationHandler(
+    entry_points=[CommandHandler('start', start)],
+    states={
+        CHOOSING: [     MessageHandler(Filters.regex('unsubscribe'),rm),
+                        MessageHandler(Filters.regex('subscribe'),sub),
+                        CommandHandler('cancel', cancel)
+                    ],
+        CHECK: [    CommandHandler('cancel', cancel),
+                    MessageHandler(Filters.all, check)
+                    ],
+    },
+    fallbacks=[CommandHandler('cancel', error)]
+)
+
+#Main Function
+def main():
+    # Displaying pin  configuration
+    logger.debug(f"Using pin {config.brewingPin} for brewing signal")
+    logger.debug(f"Using pin {config.heatingPin} for heating signal")
+
+    # Displaying password and PID
+    logger.debug(f"PID: {str(os.getpid())}")
+    logger.debug(f"This is the password: {password}")
+
+    # Create the Updater and pass it your bot's token.
+    pp = PicklePersistence(filename=config.my_DataBase)
+    updater = Updater(token=config.my_token, persistence=pp, use_context=True, user_sig_handler=shutdown)
+    def restart(update, context):
+        user = update.message.from_user
+        logger.debug(f"{user.first_name} hast triggered a restat of the bot")
+        update.message.reply_text('Bot is restarting...')
+        Thread(target=stop_and_restart).start()
+    def stop_and_restart():
+        """Gracefully stop the Updater and replace the current process with a new one"""
+        updater.stop()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+    jq = updater.job_queue
+
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
+    # log all errors
+    dp.add_error_handler(error)
+
+    dp.add_handler(conv_handler)
+    dp.add_handler(CommandHandler('pw', getPW))
+    dp.add_handler(CommandHandler('new', newPW))
+    dp.add_handler(CommandHandler('help', help))
+    dp.add_handler(CommandHandler('news', newsOrnot))
+    dp.add_handler(CommandHandler('time', timeSinceCoffee))
+    dp.add_handler(CallbackQueryHandler(button))
+    dp.add_handler(CommandHandler('error', err))
+    dp.add_handler(CommandHandler('restart', restart, filters=Filters.user(username=config.superUser)))
+
+    #Seduled eventes
+    jq.run_repeating(updateCoffeeState, interval=2, first=0)
+    jq.run_repeating(machineOff, interval = datetime.timedelta(hours=24, minutes=0), first= datetime.time(hour=17, minute=0))
+    jq.run_repeating(updateReddit, interval= datetime.timedelta(hours=1, minutes=0), first=0)
+
+    # Start the Bot
+    updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
+
+"""
+Start of programm
+"""
+if __name__ == '__main__':
+    #Make sure we are running at least Python 3
+    if sys.version_info[0] < 3:
+        raise Exception("Must be using Python 3")
+
+    #Set up execution enviroment
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    logger.info('Startting program')
+
+    #Add ArgumentParser
+    def str2bool(v):
+        if isinstance(v, bool):
+           return v
+        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+            return True
+        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+            return False
+        else:
+            raise argparse.ArgumentTypeError('Boolean value expected.')
+    def loglevel(v):
+        if isinstance(v, int):
+            return v
+        if (v == "DEBUG"):
+            return logging.DEBUG
+        if (v == "INFO"):
+            return logging.INFO
+        if (v == "WARNING"):
+            return logging.WARNING
+        if (v == "ERROR"):
+            return logging.ERROR
+        if (v == "CRITICAL"):
+            return logging.CRITICAL
+        else:
+            return logging.INFO
+
+    parser = ArgumentParser(description='This bot will tell you if fresh coffee is ready')
+    parser.add_argument("-e", dest='eraseDB', default=False, type=str2bool, nargs='?', #action='store_true',
+                        help="erase data base file, start fresh", metavar="bool")
+    parser.add_argument("-q", dest='quiet', default=False, action='store_true', # nargs='?', type=bool
+                        help="This will supress all logging")
+    parser.add_argument("-l", dest='level', default=20, type=loglevel,
+                        help="The log level to be used.")
+    parser.add_argument("-t", dest='mode', default=False, action='store_true',
+                        help="This will make the bot run in test mode.")
+    args = parser.parse_args()
+
+    #Set Log level
+    logger.setLevel(args.level)
+
+    # Handel Passed arguments
+    if (args.quiet == True):
+        logger.setLevel(logging.CRITICAL)
+    if (args.eraseDB == True):
+        logger.debug('Attempting to remove files for a clean start')
+        files = set() #A set of all files to be removed
+        files.add(config.my_DataBase)
+        for inst in storableSet.instances:
+            files.add(inst.DB)
+        for inst in storableList.instances:
+            files.add(inst.DB)
+        for file in files:
+            try:
+                os.remove(file)
+                logger.debug(f"File '{file}' removed")
+            except Exception as e:
+                logger.error(f"Failed to remove file '{file}' from hard drive\n{e}")
+        logger.info("All possible files removed. Starting fresh")
+    if (args.mode == True):
+        logger.debug(f"Running in test mode olny the following User(s) will be contacted: {config.devs}")
+        my_chat_ids = config.devs
+    else:
+        my_chat_ids.load()
+
+    #Get bot
+    bot = telegram.Bot(token=config.my_token)
+
+    main()
