@@ -3,14 +3,57 @@
 # This program is dedicated to the public domain under the GNU GPLv3 license.
 
 """
+First Logging and
+
+
 First the Libraries are imported, then some usfull classes are definde and initiated.
 This is followed by some general functions, followed by more specific ones.
 At the end everything is bundeled together in the main fuctions,
 wich is call from "if __name__ == '__main__':" wich handels the arguments for the script.
 """
-
 ### Imorting config file
 import config
+from argparse import ArgumentParser
+import logging
+
+#Add ArgumentParser
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+def loglevel(v):
+    if isinstance(v, int):
+        return v
+    if (v == "DEBUG"):
+        return logging.DEBUG
+    if (v == "INFO"):
+        return logging.INFO
+    if (v == "WARNING"):
+        return logging.WARNING
+    if (v == "ERROR"):
+        return logging.ERROR
+    if (v == "CRITICAL"):
+        return logging.CRITICAL
+    else:
+        return logging.INFO
+
+parser = ArgumentParser(description='This bot will tell you if fresh coffee is ready')
+parser.add_argument("-e", dest='eraseDB', default=False, type=str2bool, nargs='?', #action='store_true',
+                    help="erase data base file, start fresh", metavar="bool")
+parser.add_argument("-q", dest='quiet', default=False, action='store_true', # nargs='?', type=bool
+                    help="This will supress all logging")
+parser.add_argument("-l", dest='level', default=20, type=loglevel,
+                    help="The log level to be used.")
+parser.add_argument("-t", dest='mode', default=False, action='store_true',
+                    help="This will make the bot run in test mode.")
+args = parser.parse_args()
+
+
 
 ### Libraries
 import sys
@@ -21,10 +64,8 @@ from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, PicklePersistence, CallbackQueryHandler)
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import mention_html
-from argparse import ArgumentParser
 from threading import Thread
 import os
-import logging
 import random
 import datetime
 import traceback
@@ -35,7 +76,8 @@ import attr
 
 #Config logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                     level=logging.INFO)
+                     level=args.level)
+
 logger = logging.getLogger(__name__)
 
 """
@@ -541,45 +583,6 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     logger.info('Startting program')
 
-    #Add ArgumentParser
-    def str2bool(v):
-        if isinstance(v, bool):
-           return v
-        if v.lower() in ('yes', 'true', 't', 'y', '1'):
-            return True
-        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-            return False
-        else:
-            raise argparse.ArgumentTypeError('Boolean value expected.')
-    def loglevel(v):
-        if isinstance(v, int):
-            return v
-        if (v == "DEBUG"):
-            return logging.DEBUG
-        if (v == "INFO"):
-            return logging.INFO
-        if (v == "WARNING"):
-            return logging.WARNING
-        if (v == "ERROR"):
-            return logging.ERROR
-        if (v == "CRITICAL"):
-            return logging.CRITICAL
-        else:
-            return logging.INFO
-
-    parser = ArgumentParser(description='This bot will tell you if fresh coffee is ready')
-    parser.add_argument("-e", dest='eraseDB', default=False, type=str2bool, nargs='?', #action='store_true',
-                        help="erase data base file, start fresh", metavar="bool")
-    parser.add_argument("-q", dest='quiet', default=False, action='store_true', # nargs='?', type=bool
-                        help="This will supress all logging")
-    parser.add_argument("-l", dest='level', default=20, type=loglevel,
-                        help="The log level to be used.")
-    parser.add_argument("-t", dest='mode', default=False, action='store_true',
-                        help="This will make the bot run in test mode.")
-    args = parser.parse_args()
-
-    #Set Log level
-    logger.setLevel(args.level)
 
     # Handel Passed arguments
     if (args.quiet == True):
