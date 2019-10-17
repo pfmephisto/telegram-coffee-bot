@@ -56,6 +56,10 @@ parser.add_argument("-t", dest='mode', default=False, action='store_true',
                     help="This will make the bot run in test mode.")
 args = parser.parse_args()
 
+loglevel = args.level
+if (args.quiet == True):
+    loglevel = logging.CRITICAL
+
 ### Libraries
 from gpiozero import Button
 import telegram
@@ -74,7 +78,7 @@ import jokes
 
 #Config logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                     level=args.level)
+                     level=loglevel)
 logger = logging.getLogger(__name__)
 
 """
@@ -580,8 +584,6 @@ if __name__ == '__main__':
 
 
     # Handel Passed arguments
-    if (args.quiet == True):
-        logger.setLevel(logging.CRITICAL)
     if (args.eraseDB == True):
         logger.debug('Attempting to remove files for a clean start')
         files = set() #A set of all files to be removed
