@@ -12,16 +12,19 @@ This is followed by so general fuctions, that get more specific towards the bott
 The main() function then brings everything together and confgures the bot,
 while the (if __name__ == '__main__':) deals with handling the arguments from the argument parser and prepaing the enviroment.
 """
+from argparse import ArgumentParser
+import logging
+import sys
+import os
+
 ### Setting enviroment variables form config
 try:
     import config
 except Exception as e:
     import config_default as config
-
-from argparse import ArgumentParser
-import logging
-import sys
-import os
+    # If not CI
+    # This should be copying the config_default to config and printing a message to the user
+    # followed by exiting the script
 
 #Add ArgumentParser
 def str2bool(v):
@@ -65,10 +68,6 @@ if (args.quiet == True):
     loglevel = logging.CRITICAL
 
 ### Libraries
-if (os.getenv('CI') == 'true'):
-    from fake_rpi
-    sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi (GPIO)
-    sys.modules['smbus'] = fake_rpi.smbus # Fake smbus (I2C)
 from gpiozero import Button
 import telegram
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
