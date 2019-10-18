@@ -14,4 +14,4 @@ install:
   - pipenv install
 # command to run tests
 script:
-  - pytest
+  - pytest PYTHONPATH=../
