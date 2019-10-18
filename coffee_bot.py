@@ -66,9 +66,10 @@ if (args.quiet == True):
 
 ### Libraries
 if (os.getenv('CI') == 'true'):
-    from fake_rpi import Button
-else:
-    from gpiozero import Button
+    from fake_rpi
+    sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi (GPIO)
+    sys.modules['smbus'] = fake_rpi.smbus # Fake smbus (I2C)
+from gpiozero import Button
 import telegram
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
