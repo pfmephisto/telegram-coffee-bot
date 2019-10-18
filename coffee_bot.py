@@ -16,7 +16,9 @@ while the (if __name__ == '__main__':) deals with handling the arguments from th
 try:
     import config
 except Exception as e:
-    pass 
+    pass
+else:
+    import config_default
 from argparse import ArgumentParser
 import logging
 import sys

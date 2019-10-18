@@ -10,6 +10,8 @@ try:
     import config
 except Exception as e:
     pass
+else:
+    import config_default
 
 import random
 import praw
