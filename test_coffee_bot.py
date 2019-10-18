@@ -2,6 +2,7 @@
 #myPath = os.path.dirname(os.path.abspath(__file__))
 #sys.path.insert(0, myPath + '/../')
 import fake_rpi
+import sys
 sys.modules['RPi'] = fake_rpi.RPi     # Fake RPi (GPIO)
 sys.modules['smbus'] = fake_rpi.smbus # Fake smbus (I2C)
 
