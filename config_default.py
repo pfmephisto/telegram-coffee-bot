@@ -6,7 +6,7 @@ import os
 devs = [] #The developers. Will be notified if error ocur on the bot
 admins = [] # Users thet shoud have andinistive rights
 
-if (CI == False):
+if (os.getenv('CI') == 'true'):
     #Telegram
     os.environ['sysadmin'] = 'username' #User handle of main admin
 
