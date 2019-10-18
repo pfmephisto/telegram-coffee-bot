@@ -9,6 +9,7 @@ gpiozero = "*"
 python-telegram-bot = "*"
 praw = "*"
 pytest = "*"
+fake-rpi = "*"
 
 [dev-packages]
 
