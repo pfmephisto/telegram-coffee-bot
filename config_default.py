@@ -18,5 +18,5 @@ password = '' #Reddit password
 user_agent = ''
 
 #Coffee Machine
-brewingPin =
-heatingPin =
+brewingPin = 0
+heatingPin = 0
