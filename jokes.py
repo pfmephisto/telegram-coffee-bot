@@ -141,11 +141,13 @@ def formatJoke(joke):
 """
 REDIT SECTION
 """
-id = os.getenv('Reddit_secret')
-sc = os.getenv('Reddit_id')
+id = os.getenv('client_id')
+sc = os.getenv('Reddit_secret')
 un = os.getenv('Reddit_user')
 pw = os.getenv('Reddit_password')
 ua = os.getenv('Reddit_user_agent')
+
+logger.debug(f"ID: {id}, ")
 
 reddit = praw.Reddit(client_id=id , client_secret=sc,
                      password=pw, user_agent=ua,
