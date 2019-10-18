@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
 # This program is dedicated to the public domain under the GNU GPLv3 license.
 import os
@@ -19,5 +19,5 @@ if (os.getenv('CI') != 'true'):
     os.environ['Reddit_password'] = 'username' #Reddit password
     os.environ['Reddit_user_agent'] = 'username' #Reddit bot useragent
 
-    os.environ['brewingPin'] = 0 # Singal pin on rassberryPi
-    os.environ['user_agent'] = 0 # Signal pin on rassberryPi
+    os.environ['brewingPin'] = '0' # Singal pin on rassberryPi
+    os.environ['user_agent'] = '0' # Signal pin on rassberryPi
