@@ -149,9 +149,7 @@ ua = os.getenv('Reddit_user_agent')
 
 logger.debug(f"ID: {id}, ")
 
-reddit = praw.Reddit(client_id=id , client_secret=sc,
-                     password=pw, user_agent=ua,
-                     username=un)
+reddit = praw.Reddit(client_id=id, client_secret=sc, password=pw, user_agent=ua, username=un)
 
 def subredit_hot(subredit, limit=10):
         s = reddit.subreddit(subredit).hot(limit=limit)
