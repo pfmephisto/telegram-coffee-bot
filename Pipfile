@@ -6,7 +6,8 @@ name = "pypi"
 [packages]
 emoji = "*"
 gpiozero = "*"
-telegram = "*"
+python-telegram-bot = "*"
+praw = "*"
 
 [dev-packages]
 
