@@ -65,7 +65,10 @@ if (args.quiet == True):
     loglevel = logging.CRITICAL
 
 ### Libraries
-from gpiozero import Button
+if (os.getenv('CI') == 'true'):
+    from fake_rpi import Button
+else:
+    from gpiozero import Button
 import telegram
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
