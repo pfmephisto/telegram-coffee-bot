@@ -11,7 +11,7 @@ try:
 except Exception as e:
     pass
 else:
-    import config_default
+    import config_default as config
 
 import random
 import praw
