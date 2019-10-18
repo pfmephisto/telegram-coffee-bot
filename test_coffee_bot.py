@@ -1,9 +1,5 @@
 import coffee_bot
+import jokes
 
-def pas():
-    p = coffee_bot.password()
-    return p
-
-def test_password():
-    assert pas() >= 1000
-    assert pas() <= 9999
+def test_news():
+    assert type(jokes.randomJoke()) == type(dict())
