@@ -12,13 +12,15 @@ This is followed by so general fuctions, that get more specific towards the bott
 The main() function then brings everything together and confgures the bot,
 while the (if __name__ == '__main__':) deals with handling the arguments from the argument parser and prepaing the enviroment.
 """
-### Imorting config file
+### Setting enviroment variables form config
 try:
     import config
 except Exception as e:
     pass
 else:
+    pass
     import config_default as config
+
 from argparse import ArgumentParser
 import logging
 import sys
@@ -86,6 +88,18 @@ from emoji import emojize
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=loglevel)
 logger = logging.getLogger(__name__)
+
+# Importing enviroment variables
+sysAdmin = os.getenv('sysadmin')
+admins = config.admins
+devs = config.devs
+
+botBD = os.getenv('BotDB')
+token = os.getenv('tokenTelegram')
+
+brewPin = int(os.getenv('brewingPin'))
+heatPin = int(os.getenv('heatingPin'))
+
 
 """
 Classes
@@ -217,8 +231,8 @@ my_chat_ids = storableSet(key="my_chat_ids")
 password = password()
 
 # GPIO pins
-brewingSig = Button(config.brewingPin)
-heatingSig = Button(config.heatingPin)
+brewingSig = Button(brewPin)
+heatingSig = Button(heatPin)
 
 """
 Functions
@@ -238,7 +252,7 @@ def restrictedAdmin(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
         user_id = update.effective_user.id
-        if user_id not in config.adminIDs:
+        if user_id not in admins:
             update.message.reply_text('You don\'t have purmission to do this.\nPlease signe in first')
             logger.debug(f'Unauthorized access attempt by {update.effective_user.first_name} with ID: {user_id}')
             return
@@ -280,7 +294,7 @@ def shutdown(signum, frame):
             i.store()
 
 #Sent a Message
-def send(msg, chat_id=my_chat_ids, token=config.my_token):
+def send(msg, chat_id=my_chat_ids, token=os.getenv('tokenTelegram')):
     if (len(my_chat_ids) > 0):
         logger.debug('Sending messgae: ' + msg)
         for chat_id in my_chat_ids:
@@ -299,11 +313,11 @@ def help(update, context):
         text +="""\n
 /time\t\t get an update on the current state
 /news\t\t play a game"""
-    if user_id in config.adminIDs:
+    if user_id in admins:
         text += """\n
 /pw\t\t request the current password
 /new\t\t set a new global password"""
-    if user_id in config.devs:
+    if user_id in devs:
         text += """\n
 /restart\t\t will restart the bot"""
     update.message.reply_text(text)
@@ -528,16 +542,16 @@ conv_handler = ConversationHandler(
 #Main Function
 def main():
     # Displaying pin  configuration
-    logger.debug(f"Using pin {config.brewingPin} for brewing signal")
-    logger.debug(f"Using pin {config.heatingPin} for heating signal")
+    logger.debug(f"Using pin {brewPin} for brewing signal")
+    logger.debug(f"Using pin {heatPin} for heating signal")
 
     # Displaying password and PID
     logger.debug(f"PID: {str(os.getpid())}")
     logger.debug(f"This is the password: {password}")
 
     # Create the Updater and pass it your bot's token.
-    pp = PicklePersistence(filename=config.my_DataBase)
-    updater = Updater(token=config.my_token, persistence=pp, use_context=True, user_sig_handler=shutdown)
+    pp = PicklePersistence(filename=botBD)
+    updater = Updater(token=token, persistence=pp, use_context=True, user_sig_handler=shutdown)
     def restart(update, context):
         user = update.message.from_user
         logger.debug(f"{user.first_name} hast triggered a restat of the bot")
@@ -562,7 +576,7 @@ def main():
     dp.add_handler(CommandHandler('time', timeSinceCoffee))
     dp.add_handler(CallbackQueryHandler(button))
     dp.add_handler(CommandHandler('error', err))
-    dp.add_handler(CommandHandler('restart', restart, filters=Filters.user(username=config.superUser)))
+    dp.add_handler(CommandHandler('restart', restart, filters=Filters.user(username=sysAdmin)))
 
     #Seduled eventes
     jq.run_repeating(updateCoffeeState, interval=2, first=0)
@@ -594,7 +608,7 @@ if __name__ == '__main__':
     if (args.eraseDB == True):
         logger.debug('Attempting to remove files for a clean start')
         files = set() #A set of all files to be removed
-        files.add(config.my_DataBase)
+        files.add(botBD)
         for inst in storableSet.instances:
             files.add(inst.DB)
         for inst in storableList.instances:
@@ -607,12 +621,12 @@ if __name__ == '__main__':
                 logger.error(f"Failed to remove file '{file}' from hard drive\n{e}")
         logger.info("All possible files removed. Starting fresh")
     if (args.mode == True):
-        logger.debug(f"Running in test mode olny the following User(s) will be contacted: {config.devs}")
-        my_chat_ids = config.devs
+        logger.debug(f"Running in test mode olny the following User(s) will be contacted: {devs}")
+        my_chat_ids = devs
     else:
         my_chat_ids.load()
 
     #Get bot
-    bot = telegram.Bot(token=config.my_token)
+    bot = telegram.Bot(token=token)
 
     main()

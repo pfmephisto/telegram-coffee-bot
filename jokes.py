@@ -5,13 +5,14 @@
 """
 Discription to be added after reworking the file
 """
-
+# Importing enviroment variables form config
 try:
     import config
 except Exception as e:
     pass
 else:
-    import config_default as config
+    pass
+    #import config_default as config
 
 import random
 import praw
@@ -139,9 +140,15 @@ def formatJoke(joke):
 """
 REDIT SECTION
 """
-reddit = praw.Reddit(client_id=config.id, client_secret=config.secret,
-                     password=config.password, user_agent=config.user_agent,
-                     username=config.user)
+id = os.getenv('Reddit_secret')
+sc = os.getenv('Reddit_id')
+un = os.getenv('Reddit_user')
+pw = os.getenv('Reddit_password')
+ua = os.getenv('Reddit_user_agent')
+
+reddit = praw.Reddit(client_id=id , client_secret=sc,
+                     password=pw, user_agent=ua,
+                     username=un)
 
 def subredit_hot(subredit, limit=10):
         s = reddit.subreddit(subredit).hot(limit=limit)
