@@ -13,7 +13,10 @@ The main() function then brings everything together and confgures the bot,
 while the (if __name__ == '__main__':) deals with handling the arguments from the argument parser and prepaing the enviroment.
 """
 ### Imorting config file
-import config
+try:
+    import config
+except Exception as e:
+    pass 
 from argparse import ArgumentParser
 import logging
 import sys

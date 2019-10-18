@@ -6,8 +6,11 @@
 Discription to be added after reworking the file
 """
 
+try:
+    import config
+except Exception as e:
+    pass
 
-import config
 import random
 import praw
 import logging
