@@ -6,6 +6,7 @@ python:
   - "3.8-dev"  # 3.8 development branch
   - "nightly"  # nightly build
 # command to install dependencies
+arch: armv6
 install:
   - pip install pipenv
   - pipenv install
