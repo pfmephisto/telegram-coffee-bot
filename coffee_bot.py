@@ -94,7 +94,7 @@ sysAdmin = os.getenv('sysadmin')
 admins = config.admins
 devs = config.devs
 
-botBD = os.getenv('BotDB')
+botBD = os.getenv('Telegram_db')
 token = os.getenv('tokenTelegram')
 
 brewPin = int(os.getenv('brewingPin'))
@@ -551,6 +551,7 @@ def main():
 
     # Create the Updater and pass it your bot's token.
     pp = PicklePersistence(filename=botBD)
+
     updater = Updater(token=token, persistence=pp, use_context=True, user_sig_handler=shutdown)
     def restart(update, context):
         user = update.message.from_user

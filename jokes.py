@@ -9,7 +9,7 @@ Discription to be added after reworking the file
 try:
     import config
 except Exception as e:
-    pass
+    import config_default as config
 else:
     pass
     #import config_default as config
@@ -141,13 +141,11 @@ def formatJoke(joke):
 """
 REDIT SECTION
 """
-id = os.getenv('client_id')
+id = os.getenv('Reddit_id')
 sc = os.getenv('Reddit_secret')
 un = os.getenv('Reddit_user')
 pw = os.getenv('Reddit_password')
 ua = os.getenv('Reddit_user_agent')
-
-logger.debug(f"ID: {id}, ")
 
 reddit = praw.Reddit(client_id=id, client_secret=sc, password=pw, user_agent=ua, username=un)
 
