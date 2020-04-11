@@ -5,14 +5,10 @@
 """
 Discription to be added after reworking the file
 """
-# Importing enviroment variables form config
-try:
-    import config
-except Exception as e:
-    import config_default as config
-else:
-    pass
-    #import config_default as config
+#Load enviroment variables
+from dotenv import load_dotenv
+if (load_dotenv()):
+    pass # If no variables have been imported
 
 import os
 import random

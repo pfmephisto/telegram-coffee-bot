@@ -2,3 +2,8 @@
 config.py
 .local_gitignore
 __pycache__/*
+*.DS_Store
+.env
+*.vscode
+*.pyc
+Private/*

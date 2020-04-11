@@ -7,68 +7,30 @@ First the argument parser is set up and configured.
 After importing all other libraries the logger initilased.
 
 The structure of the following code is, that first the classes are defined and initilased.
-This is followed by so general fuctions, that get more specific towards the bottom.
+This is followed by some general fuctions, that get more specific towards the bottom.
 
 The main() function then brings everything together and confgures the bot,
 while the (if __name__ == '__main__':) deals with handling the arguments from the argument parser and prepaing the enviroment.
 """
+
 from argparse import ArgumentParser
 import logging
 import sys
 import os
+from ArgumentParser import args
 
-### Setting enviroment variables form config
-try:
-    import config
-except Exception as e:
-    import config_default as config
-    # If not CI
-    # This should be copying the config_default to config and printing a message to the user
-    # followed by exiting the script
 
-#Add ArgumentParser
-def str2bool(v):
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-def loglevel(v):
-    if isinstance(v, int):
-        return v
-    if (v == "DEBUG"):
-        return logging.DEBUG
-    if (v == "INFO"):
-        return logging.INFO
-    if (v == "WARNING"):
-        return logging.WARNING
-    if (v == "ERROR"):
-        return logging.ERROR
-    if (v == "CRITICAL"):
-        return logging.CRITICAL
-    else:
-        return logging.INFO
+#Load enviroment variables
+from dotenv import load_dotenv
+if (load_dotenv()):
+    pass # If no variables have been imported
 
-parser = ArgumentParser(description='This bot will tell you if fresh coffee is ready')
-parser.add_argument("-e", dest='eraseDB', default=False, type=str2bool, nargs='?', #action='store_true',
-                    help="erase data base file, start fresh", metavar="bool")
-parser.add_argument("-q", dest='quiet', default=False, action='store_true', # nargs='?', type=bool
-                    help="This will supress all logging")
-parser.add_argument("-l", dest='level', default=20, type=loglevel,
-                    help="The log level to be used.")
-parser.add_argument("-t", dest='mode', default=False, action='store_true',
-                    help="This will make the bot run in test mode.")
-args = parser.parse_args()
+if (os.getenv('CI') != 'true'):
+    pass
 
-loglevel = args.level
-if (args.quiet == True):
-    loglevel = logging.CRITICAL
-
-### Libraries
-from gpiozero import Button
+#### Libraries
+import RPi.GPIO as GPIO
+import smbus
 import telegram
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
@@ -84,22 +46,16 @@ import datetime
 import jokes
 from emoji import emojize
 
-#Config logging
+# Config logging
+loglevel = args.level
+if (args.quiet == True):
+    loglevel = logging.CRITICAL
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=loglevel)
 logger = logging.getLogger(__name__)
 
-# Importing enviroment variables
-sysAdmin = os.getenv('sysadmin')
-admins = config.admins
-devs = config.devs
-
-botBD = os.getenv('Telegram_db')
-token = os.getenv('tokenTelegram')
-
-brewPin = int(os.getenv('brewingPin'))
-heatPin = int(os.getenv('heatingPin'))
-
+admins = [os.getenv('admin')]
+devs = [os.getenv('dev')]
 
 """
 Classes
@@ -221,6 +177,16 @@ class coffeeMachine:
         for sig in signals:
             if(SignalName == sig):
                 exec('self.'+sig+" = True")
+class Signal():
+    num = ""
+    def is_pressed(self):
+        return GPIO.input(self.num)
+
+    def __init__(self, num):
+        self.num = num
+        GPIO.setwarnings(False) # Ignore warning for now
+        GPIO.setmode(GPIO.BCM) # Use physical pin numbering
+        GPIO.setup(num, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
 
 """
 Variable declaration
@@ -231,8 +197,8 @@ my_chat_ids = storableSet(key="my_chat_ids")
 password = password()
 
 # GPIO pins
-brewingSig = Button(brewPin)
-heatingSig = Button(heatPin)
+brewingSig = Signal(int(os.getenv('brewingPin')))
+heatingSig = Signal(int(os.getenv('heatingPin')))
 
 """
 Functions
@@ -354,7 +320,7 @@ def button(update, context):
 
         url = 'https://www.reddit.com'+j['url']
         bot.send_message(id, parse_mode='HTML', text='<a href="'+url+'">link</a>')
-    #Other options
+#Other options
 def error(update, context):
     """Log Errors caused by Updates."""
     """
@@ -499,19 +465,19 @@ def timeSinceCoffee(update, context):
     update.message.reply_text(text, parse_mode = "Markdown")
 
 def updateCoffeeState(context):
-    if brewingSig.is_pressed & heatingSig.is_pressed & (cm.brewing_MS == False):
+    if brewingSig.is_pressed() & heatingSig.is_pressed() & (cm.brewing_MS == False):
         send("Coffee is being brewed")
         cm.chst(cm.BREWING)
         cm.setMS('brewing_MS')
-    if (not brewingSig.is_pressed) & heatingSig.is_pressed & (cm.coffeReady_MS == False):
+    if (not brewingSig.is_pressed()) & heatingSig.is_pressed() & (cm.coffeReady_MS == False):
         send("Coffee is ready")
         cm.chst(cm.READY)
         cm.setMS('coffeReady_MS')
-    if (not brewingSig.is_pressed) & (not heatingSig.is_pressed) & (cm.off_MS == False):
+    if (not brewingSig.is_pressed()) & (not heatingSig.is_pressed()) & (cm.off_MS == False):
         send("Coffee machine has been shut off")
         cm.chst(cm.OFF)
         cm.setMS('off_MS')
-    if brewingSig.is_pressed & (not heatingSig.is_pressed) & (cm.error_MS == False):
+    if brewingSig.is_pressed() & (not heatingSig.is_pressed()) & (cm.error_MS == False):
         send("Coffee machine is malfunctioning")
         cm.chst(cm.ERROR)
         setMS('error_MS')
@@ -542,17 +508,17 @@ conv_handler = ConversationHandler(
 #Main Function
 def main():
     # Displaying pin  configuration
-    logger.debug(f"Using pin {brewPin} for brewing signal")
-    logger.debug(f"Using pin {heatPin} for heating signal")
+    logger.debug(f"Using pin {int(os.getenv('brewingPin'))} for brewing signal")
+    logger.debug(f"Using pin {int(os.getenv('heatingPin'))} for heating signal")
 
     # Displaying password and PID
     logger.debug(f"PID: {str(os.getpid())}")
     logger.debug(f"This is the password: {password}")
 
     # Create the Updater and pass it your bot's token.
-    pp = PicklePersistence(filename=botBD)
+    pp = PicklePersistence(filename=os.getenv('Telegram_db'))
 
-    updater = Updater(token=token, persistence=pp, use_context=True, user_sig_handler=shutdown)
+    updater = Updater(token=os.getenv('tokenTelegram'), persistence=pp, use_context=True, user_sig_handler=shutdown)
     def restart(update, context):
         user = update.message.from_user
         logger.debug(f"{user.first_name} hast triggered a restat of the bot")
@@ -577,7 +543,7 @@ def main():
     dp.add_handler(CommandHandler('time', timeSinceCoffee))
     dp.add_handler(CallbackQueryHandler(button))
     dp.add_handler(CommandHandler('error', err))
-    dp.add_handler(CommandHandler('restart', restart, filters=Filters.user(username=sysAdmin)))
+    dp.add_handler(CommandHandler('restart', restart, filters=Filters.user(username=os.getenv('sysadmin'))))
 
     #Seduled eventes
     jq.run_repeating(updateCoffeeState, interval=2, first=0)
@@ -609,7 +575,7 @@ if __name__ == '__main__':
     if (args.eraseDB == True):
         logger.debug('Attempting to remove files for a clean start')
         files = set() #A set of all files to be removed
-        files.add(botBD)
+        files.add(os.getenv('Telegram_db'))
         for inst in storableSet.instances:
             files.add(inst.DB)
         for inst in storableList.instances:
@@ -628,6 +594,6 @@ if __name__ == '__main__':
         my_chat_ids.load()
 
     #Get bot
-    bot = telegram.Bot(token=token)
+    bot = telegram.Bot(token=os.getenv('tokenTelegram'))
 
     main()
