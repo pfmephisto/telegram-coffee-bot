@@ -1,4 +1,4 @@
-#Load enviroment variables
+# Load enviroment variables
 from dotenv import load_dotenv
 if (not load_dotenv()):
     print('No Enviroment loaded')
