@@ -16,6 +16,13 @@
         ]
     },
     "default": {
+        "apscheduler": {
+            "hashes": [
+                "sha256:3bb5229eed6fbbdafc13ce962712ae66e175aa214c69bed35a06bffcf0c5e244",
+                "sha256:e8b1ecdb4c7cb2818913f766d5898183c7cb8936680710a4d3a966e02262e526"
+            ],
+            "version": "==3.6.3"
+        },
         "attrs": {
             "hashes": [
                 "sha256:31b2eced602aa8423c2aea9c76a724617ed67cf9513173fd3a4f03e3a929c7e6",
@@ -127,12 +134,6 @@
             "index": "pypi",
             "version": "==0.7.1"
         },
-        "future": {
-            "hashes": [
-                "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"
-            ],
-            "version": "==0.18.2"
-        },
         "gpiozero": {
             "hashes": [
                 "sha256:101044038e71cec8be2fa841d4cea9e50e7962e9fb0287f465298b59e3f06594",
@@ -218,11 +219,11 @@
         },
         "praw": {
             "hashes": [
-                "sha256:2e5c98e49fe60e5308255ed147b670d350f98281f84f582df30f87de727b6de2",
-                "sha256:cb8f85541ad4c6b10214ef9639acccfb5fed7ffee977be169b85357d2d2ea6d9"
+                "sha256:6b93ad1e53385c68753203ec87f4d0053b2425b09fc8813847800a542efdfe6c",
+                "sha256:fb55e46203a771342da7cbe144fbcd8c61d825719ce1025bdd72112194a0228f"
             ],
             "index": "pypi",
-            "version": "==6.4.0"
+            "version": "==7.1.0"
         },
         "prawcore": {
             "hashes": [
@@ -262,11 +263,18 @@
         },
         "python-telegram-bot": {
             "hashes": [
-                "sha256:346d42771c2b23384c59f5f41e05bd7e801a0ce118d8dcb95209bb73d5f694c5",
-                "sha256:3beee89cba3bc3217566c96199f04776dd25f541ac8992da27fd247b2d208a14"
+                "sha256:c9fdd77f303fe168bdf669fb2e2129567fde882cc9382a6171c1571d0ac99df4",
+                "sha256:ca78a41626d728a8f51affa792270e210fa503ed298d395bed2bd1281842dca3"
             ],
             "index": "pypi",
-            "version": "==12.2.0"
+            "version": "==13.0"
+        },
+        "pytz": {
+            "hashes": [
+                "sha256:3e6b7dd2d1e0a59084bcee14a17af60c5c562cdc16d828e8eba2e683d3a7e268",
+                "sha256:5c55e189b682d420be27c6995ba6edce0c0a77dd67bfbe2ae6607134d5851ffd"
+            ],
+            "version": "==2020.4"
         },
         "requests": {
             "hashes": [
