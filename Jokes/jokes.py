@@ -5,10 +5,6 @@
 """
 Discription to be added after reworking the file
 """
-#Load enviroment variables
-from dotenv import load_dotenv
-if (load_dotenv()):
-    pass # If no variables have been imported
 
 import os
 import random

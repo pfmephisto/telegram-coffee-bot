@@ -29,8 +29,6 @@ if (os.getenv('CI') != 'true'):
     pass
 
 #### Libraries
-import RPi.GPIO as GPIO
-import smbus
 import telegram
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, ChatAction)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
@@ -43,7 +41,9 @@ from functools import wraps
 import traceback
 import random
 import datetime
-import jokes
+
+import Jokes.jokes as jokes
+import CoffeeMachine.coffeeMachine as coffeeM
 from emoji import emojize
 
 # Config logging
@@ -79,7 +79,7 @@ class storableSet(set):
         try:
             super(storableSet, self).__init__(set(shelve[self.key]))
             logger.debug(F"Sucsessfully loaded '{self.key}' from '{self.DB}'")
-        except Exception as e:
+        except:
             logger.error(F"Failed getting '{self.key}' from '{self.DB}'")
         finally:
             shelve.close()
@@ -90,7 +90,7 @@ class storableSet(set):
         try:
             shelve[self.key] = set(self)
             logger.debug(F"Sucsessfully stored '{self.key}' in '{self.DB}'")
-        except Exception as e:
+        except:
             logger.error(F"Failed saving '{self.key}' in '{self.DB}'")
         finally:
             shelve.close()
@@ -113,7 +113,7 @@ class storableList(list):
         try:
             super(storableList, self).__init__(list(shelve[self.key]))
             logger.debug(F"Sucsessfully loaded '{self.key}' from '{self.DB}'")
-        except Exception as e:
+        except:
             logger.error(F"Failed getting '{self.key}' from '{self.DB}'")
         finally:
             shelve.close()
@@ -124,7 +124,7 @@ class storableList(list):
         try:
             shelve[self.key] = list(self)
             logger.debug(F"Sucsessfully stored '{self.key}' in '{self.DB}'")
-        except Exception as e:
+        except:
             logger.error(F"Failed saving '{self.key}' in '{self.DB}'")
         finally:
             shelve.close()
@@ -139,66 +139,15 @@ class password():
         self._val = int(val)
     def __str__(self):
         return str(self._val)
-class coffeeMachine:
-    name = None
-    state = None
-    lastCoffee = None
-
-    OFF, BREWING, READY, ERROR = range(4) #States for coffeemake staes
-    brewing_MS = coffeReady_MS = off_MS = error_MS = False #Messages
-
-    def __init__(self, name, state = OFF):
-        self.name = str(name)
-        self.state = state
-
-    def __str__(self):
-        return self.name
-    def __int__(self):
-        return int(self.state)
-
-    def chst(self, val):
-        self.state = val
-        if(val == self.READY):
-            self.lastCoffee = datetime.datetime.now()
-    def strState(self):
-        text =[
-        'I hope your are ready to surfive the ice age',
-        'Set a timer, coffee will be ready soon',
-        'Get it while it\'s hot',
-        'Oh no something has gone wrong',
-        ]
-        return text[self.state]
-
-    def resetSingals(self):
-        self.brewing_MS = self.coffeReady_MS = self.off_MS = self.error_MS = False
-    def setMS(self, SignalName):
-        self.resetSingals()
-        signals = ["brewing_MS","coffeReady_MS","off_MS", "error_MS"]
-        for sig in signals:
-            if(SignalName == sig):
-                exec('self.'+sig+" = True")
-class Signal():
-    num = ""
-    def is_pressed(self):
-        return GPIO.input(self.num)
-
-    def __init__(self, num):
-        self.num = num
-        GPIO.setwarnings(False) # Ignore warning for now
-        GPIO.setmode(GPIO.BCM) # Use physical pin numbering
-        GPIO.setup(num, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
 
 """
 Variable declaration
 """
 # class isinstance
-cm = coffeeMachine("The CoffeeNator")
+cm = coffeeM.coffeeMachine("The CoffeeNator")
 my_chat_ids = storableSet(key="my_chat_ids")
 password = password()
 
-# GPIO pins
-brewingSig = Signal(int(os.getenv('brewingPin')))
-heatingSig = Signal(int(os.getenv('heatingPin')))
 
 """
 Functions
@@ -361,7 +310,7 @@ def error(update, context):
     for dev_id in devs:
         context.bot.send_message(dev_id, text, parse_mode=ParseMode.HTML)
     # we raise the error again, so the logger module catches it. If you don't use the logger module, use it.
-    raise
+    raise Exception(text)
 
 #Conversation functions
 def sub(update, context):
@@ -380,7 +329,7 @@ def check(update, context):
             logger.debug("%s has been added to the DB", user.first_name)
             update.message.reply_text('You have sucsessfully signed up')
             return ConversationHandler.END
-        except Exception as e:
+        except:
             logger.warning("%s could not to added to DB", user.first_name)
             return ConversationHandler.END
     else:
@@ -403,7 +352,7 @@ def rm(update, context):
             update.message.reply_text('You have sucsessfully been removed from the mailing list')
             logger.info("%s has been removed from the BD", user.first_name)
             return ConversationHandler.END
-    except Exception as e:
+    except:
         logger.warning("%s is not in the BD", user.first_name)
         return ConversationHandler.END
 
@@ -465,25 +414,17 @@ def timeSinceCoffee(update, context):
     update.message.reply_text(text, parse_mode = "Markdown")
 
 def updateCoffeeState(context):
-    if brewingSig.is_pressed() & heatingSig.is_pressed() & (cm.brewing_MS == False):
-        send("Coffee is being brewed")
-        cm.chst(cm.BREWING)
-        cm.setMS('brewing_MS')
-    if (not brewingSig.is_pressed()) & heatingSig.is_pressed() & (cm.coffeReady_MS == False):
-        send("Coffee is ready")
-        cm.chst(cm.READY)
-        cm.setMS('coffeReady_MS')
-    if (not brewingSig.is_pressed()) & (not heatingSig.is_pressed()) & (cm.off_MS == False):
-        send("Coffee machine has been shut off")
-        cm.chst(cm.OFF)
-        cm.setMS('off_MS')
-    if brewingSig.is_pressed() & (not heatingSig.is_pressed()) & (cm.error_MS == False):
-        send("Coffee machine is malfunctioning")
-        cm.chst(cm.ERROR)
-        setMS('error_MS')
+    def action(state):
+        return {
+            cm.State.BREWING : send("Coffee is being brewed"),
+            cm.State.READY : send("Coffee is ready"),
+            cm.State.OFF : send("Coffee machine has been shut off"),
+            cm.State.ERROR : send("Coffee machine is malfunctioning"),
+        }[state]
+    action(cm.checkState())
 def machineOff(context):
     logger.debug(f"checking if the machine is off - State = {cm.state}")
-    if not(cm.state == cm.OFF):
+    if not(cm.state == cm.State.OFF):
         logger.debug("Machine is still on sending message")
         send("The coffee machine is still on")
 def updateReddit(context):
@@ -502,8 +443,7 @@ conv_handler = ConversationHandler(
                     MessageHandler(Filters.all, check)
                     ],
     },
-    fallbacks=[CommandHandler('cancel', error)]
-)
+    fallbacks=[CommandHandler('cancel', error)])
 
 #Main Function
 def main():
