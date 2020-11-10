@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+python-dotenv = "*"
 emoji = "*"
 gpiozero = "*"
 python-telegram-bot = "*"
@@ -14,4 +15,4 @@ fake-rpi = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = ">=3.9.*"
