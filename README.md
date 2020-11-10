@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.com/pfmephisto/telegram-coffee-bot.svg?branch=master)](https://travis-ci.com/pfmephisto/telegram-coffee-bot)
+![Python Package Build Status](https://github.com/pfmephisto/telegram-coffee-bot/workflows/Python%20package/badge.svg)
+![CodeQL Status](https://github.com/pfmephisto/telegram-coffee-bot/workflows/CodeQL/badge.svg)
 # Telegram CoffeeBot
 
 This bot is designed to run on an raspberryPI and update its user about the state of the coffee machine at our lab.
