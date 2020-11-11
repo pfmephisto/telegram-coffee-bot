@@ -6,6 +6,19 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      devs: ${{ secrets.DEVS }}
+      admins: ${{ secrets.ADMINS }}
+      sysadmin: ${{ secrets.SYSADMIN }}
+      tokenTelegram: ${{ secrets.TOKENTELEGRAM }}
+      Telegram_db: ${{ secrets.TELEGRAM_DB }}
+      Reddit_secret: ${{ secrets.REDDIT_SECRET }}
+      Reddit_id: ${{ secrets.REDDIT_ID }}
+      Reddit_user: ${{ secrets.REDDIT_USER }}
+      Reddit_password: ${{ secrets.REDDIT_PASSWORD }}
+      Reddit_user_agent: ${{ secrets.REDDIT_USER_AGENT }}
+      brewingPin: ${{ secrets.BREWINGPIN }}
+      heatingPin: ${{ secrets.HEATINGPIN }}
     strategy:
       fail-fast: false
       matrix:
