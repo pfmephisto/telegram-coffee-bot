@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 python-dotenv = "*"
 emoji = "*"
-gpiozero = "*"
 python-telegram-bot = "*"
 praw = "*"
 pytest = "*"
@@ -15,4 +14,4 @@ fake-rpi = "*"
 [dev-packages]
 
 [requires]
-python_version = ">=3.9.*"
+python_version = "python 3"

@@ -19,7 +19,7 @@ from the argument parser and prepaing the enviroment.
 import logging
 import sys
 import os
-from ArgumentParser import args
+import ArgumentParser as args
 
 
 # Load enviroment variables
@@ -51,9 +51,10 @@ from functools import wraps
 import traceback
 import datetime
 
-import Jokes.jokes as jokes
-import CoffeeMachine.coffeeMachine as coffeeM
+import Jokes as jokes
+import CoffeeMachine as coffeeM
 from emoji import emojize
+import Password.password as password
 
 # Config logging
 loglevel = args.level
@@ -91,7 +92,7 @@ class storableSet(set):
 
     def load(self):
         import shelve
-        shelve = shelve.open(self.DB)
+        shelve = shelve.open("/data/"+self.DB)
         logger.debug(F"Going to load '{self.key}' from '{self.DB}'")
         try:
             super(storableSet, self).__init__(set(shelve[self.key]))
@@ -104,7 +105,7 @@ class storableSet(set):
 
     def store(self):
         import shelve
-        shelve = shelve.open(self.DB)
+        shelve = shelve.open("/data/"+self.DB)
         logger.debug(F"Atempting to store '{self.key}' in '{self.DB}'")
         try:
             shelve[self.key] = set(self)
@@ -135,7 +136,7 @@ class storableList(list):
 
     def load(self):
         import shelve
-        shelve = shelve.open(self.DB)
+        shelve = shelve.open("/data/"+self.DB)
         logger.debug(F"Going to load '{self.key}' from '{self.DB}'")
         try:
             super(storableList, self).__init__(list(shelve[self.key]))
@@ -148,7 +149,7 @@ class storableList(list):
 
     def store(self):
         import shelve
-        shelve = shelve.open(self.DB)
+        shelve = shelve.open("/data/"+self.DB)
         logger.debug(F"Atempting to store '{self.key}' in '{self.DB}'")
         try:
             shelve[self.key] = list(self)
@@ -158,21 +159,6 @@ class storableList(list):
             logger.info(e)
         finally:
             shelve.close()
-
-
-class password():
-    def __init__(self):
-        import random
-        val = random.randrange(1000, 9999)
-        self._val = int(val)
-
-    def change(self):
-        import random
-        val = random.randrange(1000, 9999)
-        self._val = int(val)
-
-    def __str__(self):
-        return str(self._val)
 
 
 """

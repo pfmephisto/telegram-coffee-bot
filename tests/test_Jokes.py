@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 if (not load_dotenv()):
     print('No Enviroment loaded')
 
-import Jokes.jokes as jokes
+import coffeeBot.Jokes as jokes
 
 
 def test_RANDOM():

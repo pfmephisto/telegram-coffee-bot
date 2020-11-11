@@ -2,7 +2,7 @@ import sys
 import datetime
 import fake_rpi
 from fake_rpi import toggle_print
-import CoffeeMachine.coffeeMachine as CM
+import coffeeBot.CoffeeMachine as CM
 
 sys.modules['RPi'] = fake_rpi.RPi            # Fake RPi
 sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO  # Fake GPIO
