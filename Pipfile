@@ -8,9 +8,8 @@ python-dotenv = "*"
 emoji = "*"
 python-telegram-bot = "*"
 praw = "*"
-pytest = "*"
 fake-rpi = "*"
 
 [dev-packages]
-
+pytest = "*"
 
