@@ -63,9 +63,7 @@ def test_int():
 
 def test_lastCoffee_Time():
     global timeStamp
-    lastCoffeeSimple = cm.lastCoffee
 
-    timeStamp.replace(microsecond=0)
-    lastCoffeeSimple.replace(microsecond=0)
-
-    assert cm.lastCoffee is not None and lastCoffeeSimple == timeStamp
+    assert cm.lastCoffee is not None and \
+        cm.lastCoffee.replace(microsecond=0) == \
+        timeStamp.replace(microsecond=0)
