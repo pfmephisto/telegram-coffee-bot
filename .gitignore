@@ -2,6 +2,9 @@
 config.py
 .local_gitignore
 __pycache__/*
+__pycache__
+.pytest_cache/*
+.pytest_cache
 *.DS_Store
 .env
 *.vscode
@@ -16,6 +19,8 @@ data/*
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+TestSession.session
+*.session-journal
 
 # Local History for Visual Studio Code
 .history/

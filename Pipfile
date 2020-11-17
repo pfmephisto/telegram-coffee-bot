@@ -4,12 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-python-dotenv = "*"
 emoji = "*"
 python-telegram-bot = "*"
 praw = "*"
 fake-rpi = "*"
+telethon = "*"
 
 [dev-packages]
 pytest = "*"
-
+telethon = "*"
+flake8 = "*"
+pylint = "*"
+pytest-asyncio = "*"

@@ -1,7 +1,3 @@
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
-# This program is dedicated to the public domain under the GNU GPLv3 license.
-
 """
 First the argument parser is set up and configured.
 After importing all other libraries the logger initilased.
@@ -19,18 +15,14 @@ from the argument parser and prepaing the enviroment.
 import logging
 import sys
 import os
-import ArgumentParser as args
-
-
-# Load enviroment variables
-from dotenv import load_dotenv
-if (load_dotenv()):
-    pass   # If no variables have been imported
-
-if (os.getenv('CI') != 'true'):
-    pass
-
-# Libraries
+from threading import Thread
+from functools import wraps
+import traceback
+import datetime
+import weakref
+import shelve
+import signal
+from emoji import emojize
 import telegram
 from telegram import (ReplyKeyboardMarkup,
                       InlineKeyboardButton,
@@ -46,159 +38,167 @@ from telegram.ext import (Updater,
                           CallbackQueryHandler)
 from telegram.utils.helpers import mention_html
 
-from threading import Thread
-from functools import wraps
-import traceback
-import datetime
 
-import Jokes as jokes
-import CoffeeMachine as coffeeM
-from emoji import emojize
-import Password.password as password
+from argument_parser import args as command_line_args
+from jokes import random_gif, maybe_news, update_reddit_db
+from coffee_machine import CoffeeMachine
+from password import Password, PASSWORD
+
 
 # Config logging
-loglevel = args.level
-if (args.quiet is True):
-    loglevel = logging.CRITICAL
+LOGLEVEL = command_line_args.level
+if command_line_args.quiet is True:
+    LOGLEVEL = logging.CRITICAL
 logging.basicConfig(format='%(asctime)s - \
                     %(name)s - %(levelname)s - %(message)s',
-                    level=loglevel)
+                    level=LOGLEVEL)
 logger = logging.getLogger(__name__)
 
 admins = [os.getenv('admin')]
 devs = [os.getenv('dev')]
+
 
 """
 Classes
 """
 
 
-class storableSet(set):
+class StorableSet(set):
+    """Class reoresenting a set that will be stored between sessions"""
     instances = []
 
-    def __init__(self, key, DB="User", s=()):
-        import weakref
+    def __init__(self, key, db_name="User", s=None):
+        if s is None:
+            s = ()
         self.__class__.instances.append(weakref.proxy(self))
-        logger.debug(f"Initiating class '{self.__class__.__name__} \
-            with key '{key} & DB '{DB}'")
-        super(storableSet, self).__init__(s)
+        logger.debug("Initiating class '%s' with key '%s' & DB '%s'",
+                     self.__class__.__name__, key, db_name)
+        super(StorableSet, self).__init__(s)
         self.key = key
-        self.DB = DB
+        self.db_name = db_name
         self._set = set(s)
 
     def __repr__(self):
         return f"{self.__class__.__name__} with Key = '{self.key}' & \
-            DB = '{self.DB}'\n'{set(self)}'"
+            DB = '{self.db_name}'\n'{set(self)}'"
 
     def load(self):
-        import shelve
-        shelve = shelve.open("/data/"+self.DB)
-        logger.debug(F"Going to load '{self.key}' from '{self.DB}'")
+        """Loading the storred data from the self"""
+        local_shelve = shelve.open(self.db_name)
+        logger.debug("Going to load '%s' from '%s'",
+                     self.key, self.db_name)
         try:
-            super(storableSet, self).__init__(set(shelve[self.key]))
-            logger.debug(F"Sucsessfully loaded '{self.key}' from '{self.DB}'")
-        except Exception as e:
-            logger.error(F"Failed getting '{self.key}' from '{self.DB}'")
-            logger.info(e)
+            super(StorableSet, self).__init__(set(local_shelve[self.key]))
+            logger.debug("Sucsessfully loaded '%s' from '%s'",
+                         self.key, self.db_name)
+        except Exception as error_message:
+            logger.error("Failed getting '%s' from '%s'",
+                         self.key, self.db_name)
+            logger.info(error_message)
         finally:
-            shelve.close()
+            local_shelve.close()
 
     def store(self):
-        import shelve
-        shelve = shelve.open("/data/"+self.DB)
-        logger.debug(F"Atempting to store '{self.key}' in '{self.DB}'")
+        """Store data in the set for later retrival"""
+        local_shelve = shelve.open(self.db_name)
+        logger.debug("Atempting to store '%s' in '%s'",
+                     self.key, self.db_name)
         try:
-            shelve[self.key] = set(self)
-            logger.debug(F"Sucsessfully stored '{self.key}' in '{self.DB}'")
-        except Exception as e:
-            logger.error(F"Failed saving '{self.key}' in '{self.DB}'")
-            logger.info(e)
+            local_shelve[self.key] = set(self)
+            logger.debug("Sucsessfully stored '%s' in '%s'",
+                         self.key, self.db_name)
+        except Exception as error_message:
+            logger.error("Failed saving '%s' in '%s'",
+                         self.key, self.db_name)
+            logger.error(error_message)
         finally:
-            shelve.close()
+            local_shelve.close()
 
 
-class storableList(list):
+class StorableList(list):
+    """Class representing a list that will be stored between sessions"""
     instances = []
 
-    def __init__(self, key, DB="User", s=[]):
-        import weakref
+    def __init__(self, key, db_name="User", s=None):
+        if s is None:
+            s = []
         self.__class__.instances.append(weakref.proxy(self))
-        logger.debug(f"Initiating class '{self.__class__.__name__} \
-            with key '{key} & DB '{DB}'")
-        super(storableList, self).__init__(s)
+        logger.debug("Initiating class '%s' with key '%s' & DB '%s'",
+                     self.__class__.__name__, key, db_name)
+        super(StorableList, self).__init__(s)
         self.key = key
-        self.DB = DB
+        self.db_name = db_name
         self._set = list(s)
 
     def __repr__(self):
         return f"{self.__class__.__name__} with Key = '{self.key}' & \
-            DB = '{self.DB}'\n'{list(self)}'"
+            DB = '{self.db_name}'\n'{list(self)}'"
 
     def load(self):
-        import shelve
-        shelve = shelve.open("/data/"+self.DB)
-        logger.debug(F"Going to load '{self.key}' from '{self.DB}'")
+        """Load values form shelve"""
+        local_shelve = shelve.open(self.db_name)
+        logger.debug("Going to load '%s' from '%s'",
+                     self.key, self.db_name)
         try:
-            super(storableList, self).__init__(list(shelve[self.key]))
-            logger.debug(F"Sucsessfully loaded '{self.key}' from '{self.DB}'")
-        except Exception as e:
-            logger.error(F"Failed getting '{self.key}' from '{self.DB}'")
-            logger.info(e)
+            super(StorableList, self).__init__(list(local_shelve[self.key]))
+            logger.debug("Sucsessfully loaded '%s' from '%s'",
+                         self.key, self.db_name)
+        except Exception as error_message:
+            logger.error("Failed getting '%s' from '%s'",
+                         self.key, self.db_name)
+            logger.info(error_message)
         finally:
-            shelve.close()
+            local_shelve.close()
 
     def store(self):
-        import shelve
-        shelve = shelve.open("/data/"+self.DB)
-        logger.debug(F"Atempting to store '{self.key}' in '{self.DB}'")
+        """Store values in shelve"""
+        local_shelve = shelve.open(self.db_name)
+        logger.debug("Atempting to store '%s' in '%s'",
+                     self.key, self.db_name)
         try:
-            shelve[self.key] = list(self)
-            logger.debug(F"Sucsessfully stored '{self.key}' in '{self.DB}'")
-        except Exception as e:
-            logger.error(F"Failed saving '{self.key}' in '{self.DB}'")
-            logger.info(e)
+            local_shelve[self.key] = list(self)
+            logger.debug("Sucsessfully stored '%s' in '%s'",
+                         self.key, self.db_name)
+        except Exception as error_message:
+            logger.error("Failed saving '%s' in '%s'",
+                         self.key, self.db_name)
+            logger.info(error_message)
         finally:
-            shelve.close()
+            local_shelve.close()
 
 
-"""
-Variable declaration
-"""
 # class isinstance
-cm = coffeeM.coffeeMachine("The CoffeeNator")
-my_chat_ids = storableSet(key="my_chat_ids")
-password = password()
-
-
-"""
-Functions
-"""
+cm = CoffeeMachine("The CoffeeNator")
+my_chat_ids = StorableSet(key="my_chat_ids")
+PASSWORD = Password()
 
 
 # General Fuctions
-def restrictedMember(func):
+def restricted_member(func):
+    """Resrict the wrapped functions to only be able to be called by admins"""
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
         user_id = update.effective_user.id
         if user_id not in my_chat_ids:
             update.message.reply_text('You don\'t have purmission to do this.\n\
                 Please signe in first')
-            logger.debug(f'Unauthorized access attempt by {update.effective_user.first_name} \
-                with ID: {user_id}')
+            logger.debug('Unauthorized access attempt by %s with ID: %s',
+                         update.effective_user.first_name, user_id)
             return
         return func(update, context, *args, **kwargs)
     return wrapped
 
 
-def restrictedAdmin(func):
+def restricted_admin(func):
+    """Restrict the wrapped methods to only be able to be called by admins"""
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
         user_id = update.effective_user.id
         if user_id not in admins:
             update.message.reply_text('You don\'t have purmission to do this.\n\
                 Please signe in first')
-            logger.debug(f'Unauthorized access attempt by {update.effective_user.first_name} \
-                with ID: {user_id}')
+            logger.debug('Unauthorized access attempt by %s with ID: %s',
+                         update.effective_user.first_name, user_id)
             return
         return func(update, context, *args, **kwargs)
     return wrapped
@@ -217,38 +217,34 @@ def send_typing_action(func):
 
 
 def strfdelta(tdelta, fmt):
-    d = {"days": tdelta.days}
-    d["hours"], rem = divmod(tdelta.seconds, 3600)
-    d["minutes"], d["seconds"] = divmod(rem, 60)
-    return fmt.format(**d)
+    """Make a string from delta"""
+    delta = {"days": tdelta.days}
+    delta["hours"], rem = divmod(tdelta.seconds, 3600)
+    delta["minutes"], delta["seconds"] = divmod(rem, 60)
+    return fmt.format(**delta)
 
 
 def shutdown(signum, frame):
-    import signal
+    """Shut down the server"""
+    del frame  # Unused
     logger.debug("Statring shoutdow routine")
-    if(args.mode is True):
+    if command_line_args.mode is True:
         logger.debug("Running in test mode. Nothing will be saved")
-    if signum == signal.SIGINT and args.mode is not True:
-        for i in storableSet.instances:
+    if (signum == signal.SIGINT or
+        signum == signal.SIGTERM or
+        signum == signal.SIGABRT) and \
+            command_line_args.mode is not True:
+        for i in StorableSet.instances:
             i.store()
-        for i in storableList.instances:
-            i.store()
-    if signum == signal.SIGTERM and args.mode is not True:
-        for i in storableSet.instances:
-            i.store()
-        for i in storableList.instances:
-            i.store()
-    if signum == signal.SIGABRT and args.mode is not True:
-        for i in storableSet.instances:
-            i.store()
-        for i in storableList.instances:
+        for i in StorableList.instances:
             i.store()
 
 
-# Sent a Message
 def send(msg, chat_id=my_chat_ids, token=os.getenv('tokenTelegram')):
-    if (len(my_chat_ids) > 0):
-        logger.debug('Sending messgae: ' + msg)
+    """Send a message"""
+    del token  # Unused
+    if len(my_chat_ids) > 0:
+        logger.debug('Sending messgae: %s', msg)
         for chat_id in my_chat_ids:
             bot.sendMessage(chat_id=chat_id, text=msg)
     else:
@@ -256,26 +252,30 @@ def send(msg, chat_id=my_chat_ids, token=os.getenv('tokenTelegram')):
 
 
 # Non member Functions
-def help(update, context):
-    text = "This bot will inform you about the current state of coffee \n \
-    /help\t\t diplay this help message \n \
-    /start\t\t subscribe to the update list"
+def help_message(update, context):
+    """Show help messgae to user"""
+    del context  # unused
+    text = "This bot will inform you about the current state of coffee\n\
+        /help\t\t diplay this help message\n\
+        /start\t\t subscribe to the update list"
 
     user_id = update.effective_user.id
     if user_id in my_chat_ids:
-        text += "\n \
-        /time\t\t get an update on the current state \
-        /news\t\t play a game"
+        text += "\n\
+            /time\t\t get an update on the current state\
+            /news\t\t play a game"
     if user_id in admins:
-        text += "\n \
-        /pw\t\t request the current password \
-        /new\t\t set a new global password"
+        text += "\n\
+            /pw\t\t request the current password\
+            /new\t\t set a new global password"
     if user_id in devs:
         text += "\n /restart\t\t will restart the bot"
     update.message.reply_text(text)
 
 
 def start(update, context):
+    """Start bot conversation"""
+    del context  # unused
     reply_keyboard = [['subscribe', 'unsubscribe', '/cancel']]
 
     update.message.reply_text(
@@ -289,11 +289,12 @@ def start(update, context):
 
 
 def button(update, context):
+    """Check the button"""
     query = update.callback_query
 
     # News Game
-    if ((query.data == 'NewsTrue') | (query.data == 'NewsFalse')):
-        id = query['message']['chat']['id']
+    if (query.data == 'NewsTrue') | (query.data == 'NewsFalse'):
+        user_id = query['message']['chat']['id']
         j = ""
         try:
             j = context.user_data["currentQuestion"]
@@ -301,25 +302,27 @@ def button(update, context):
             update.message.reply_text('There has been an Error.\n\
                                       Your anser was not recived')
             return
-        a = j['truth']
-        q = j['headline']
-        if ('News'+a == query.data):
-            query.edit_message_text('*Is this a real news aretical?*\n'+q,
+        answer = j['truth']
+        question = j['headline']
+        if 'News' + answer == query.data:
+            query.edit_message_text('*Is this a real news aretical?*\n'
+                                    + question,
                                     parse_mode="Markdown")
-            bot.send_animation(id,
-                               animation=jokes.randomGIF('success'),
+            bot.send_animation(user_id,
+                               animation=random_gif('success'),
                                parse_mode='Markdown',
                                caption='*You are correct*')
         else:
-            query.edit_message_text('*Is this a real news aretical?*\n'+q,
+            query.edit_message_text('*Is this a real news aretical?*\n'
+                                    + question,
                                     parse_mode="Markdown")
-            bot.send_animation(id,
-                               animation=jokes.randomGIF('facepam'),
+            bot.send_animation(user_id,
+                               animation=random_gif('facepam'),
                                parse_mode='Markdown',
                                caption='*You are wrong*')
 
         url = 'https://www.reddit.com'+j['url']
-        bot.send_message(id,
+        bot.send_message(user_id,
                          parse_mode='HTML',
                          text='<a href="'+url+'">link</a>')
 
@@ -327,21 +330,14 @@ def button(update, context):
 # Other options
 def error(update, context):
     """Log Errors caused by Updates."""
-    """
-    logger.warning('Update "%s" caused error "%s"', update, error)
-    return ConversationHandler.END
-    """
-    # add all the dev user_ids in this list.
-    # You can also add ids of channels or groups.
-    devs = [117226628]
-
     # we want to notify the user of this problem.
     # This will always work, but not notify users if the update is an
     # callback or inline query, or a poll update.
     # In case you want this, keep in mind that sending the message
     # could fail
     if update.effective_message:
-        text = "Hey. I'm sorry to inform you that an error happened while I tried to handle your update. " \
+        text = "Hey. I'm sorry to inform you that an error happened while \
+            I tried to handle your update. " \
                "My developer(s) will be notified."
         update.effective_message.reply_text(text)
 
@@ -387,18 +383,23 @@ def error(update, context):
 
 # Conversation functions
 def sub(update, context):
+    """Initiate substribtion proccess"""
+    del context  # unused
     user = update.message.from_user
     logger.info("%s is trying to subscribe", user.first_name)
     update.message.reply_text('Please enter the password \
                               that is beeing displayed',
                               reply_markup=telegram.ReplyKeyboardRemove())
+    logger.debug('The current password is %s', str(PASSWORD))
     return CHECK
 
 
 def check(update, context):
+    """Check password"""
+    del context  # unused
     reply_keyboard = [['subscribe', 'unsubscribe', '/cancel']]
     user = update.message.from_user
-    if(update.message.text == str(password)):
+    if update.message.text == str(PASSWORD):
         logger.info("%s has entered the correct password", user.first_name)
         try:
             # DB.Add("Subscribers",update.message.chat["id"])
@@ -406,9 +407,9 @@ def check(update, context):
             logger.debug("%s has been added to the DB", user.first_name)
             update.message.reply_text('You have sucsessfully signed up')
             return ConversationHandler.END
-        except Exception as e:
+        except Exception as error_message:
             logger.warning("%s could not to added to DB", user.first_name)
-            logger.info(e)
+            logger.info(error_message)
             return ConversationHandler.END
     else:
         logger.info("%s Entered the wrong password", user.first_name)
@@ -422,6 +423,8 @@ def check(update, context):
 
 
 def cancel(update, context):
+    """Cancel conversation"""
+    del context  # unused
     user = update.message.from_user
     logger.debug("User %s canceled the conversation.", user.first_name)
     smiley = emojize(":smiley:", use_aliases=True)
@@ -430,7 +433,9 @@ def cancel(update, context):
     return ConversationHandler.END
 
 
-def rm(update, context):
+def remove(update, context):
+    """Remove user from subscribtion list"""
+    del context  # unused
     user = update.message.from_user
     try:
         # DB.Remove("Subscribers", update.message.chat["id"])
@@ -439,103 +444,121 @@ def rm(update, context):
             'You have sucsessfully been removed from the mailing list')
         logger.info("%s has been removed from the BD", user.first_name)
         return ConversationHandler.END
-    except Exception as e:
-        logger.warning(f"{user.first_name} is not in the BD")
-        logger.info(e)
+    except Exception as error_message:
+        logger.warning("%s is not in the BD", user.first_name)
+        logger.info(error_message)
         return ConversationHandler.END
 
 
 # Functions for members
-@restrictedAdmin
+@restricted_admin
 def err(update, context):
+    """Manualy raise error"""
     raise Exception('ErrorCommand')
 
 
-@restrictedMember
-def getPW(update, context):
+@restricted_member
+def get_pw(update, context):
+    """Get the password"""
+    del context  # unused
     user = update.message.from_user
     logger.debug("%s has requested the Password", user.first_name)
-    update.message.reply_text('The password is: ' + str(password))
+    update.message.reply_text('The password is: ' + str(PASSWORD))
 
 
-@restrictedMember
-def newPW(update, context):
+@restricted_member
+def new_pw(update, context):
+    """Request a new password"""
+    del context  # unused
     user = update.message.from_user
     logger.debug("%s is requesting to change password", user.first_name)
 
-    password.change()
-    update.message.reply_text('The password is now: ' + str(password))
+    PASSWORD.change()
+    update.message.reply_text('The password is now: ' + str(PASSWORD))
     logger.debug("%s is requesting to change password", user.first_name)
-    logger.info("This is the password: %s", password)
+    logger.info("This is the password: %s", str(PASSWORD))
 
 
-@restrictedMember
+@restricted_member
 @send_typing_action
-def newsOrnot(update, context):
+def news_or_not(update, context):
+    """Initiate is this real news game"""
     user = update.message.from_user
     logger.debug("%s wats to play a news game", user.first_name)
 
-    j = jokes.maybeNews()
-    q = j['headline']
+    joke = maybe_news()
+    question = joke['headline']
 
     keyboard = [[InlineKeyboardButton("True", callback_data="NewsTrue"),
                 InlineKeyboardButton("Fake", callback_data="NewsFalse")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    context.user_data["currentQuestion"] = j
+    context.user_data["currentQuestion"] = joke
 
-    update.message.reply_text('*Is this a real news aretical?*\n'+q,
+    update.message.reply_text('*Is this a real news aretical?*\n'+question,
                               reply_markup=reply_markup,
                               parse_mode="Markdown")
 
 
-@restrictedMember
-def timeSinceCoffee(update, context):
+@restricted_member
+def time_since_coffee(update, context):
+    """Get the time passed since the last coffee was made"""
+    del context  # unused
     user = update.message.from_user
-    logger.debug(f"{user.first_name} Wants to know the time \
-                 since the last coffee has been brewed")
+    logger.debug("%s wants to know the time \
+                 since the last coffee has been brewed",
+                 user.first_name)
 
     text = ""
-    if (cm.lastCoffee is None):
+    if cm.last_coffee is None:
         text = 'No coffee has been made yet'
         update.message.reply_text(text)  # , parse_mode = "Markdown"
         return
 
     now = datetime.datetime.now()
-    timePast = now - cm.lastCoffee
-    text = strfdelta(timePast,
+    time_past = now - cm.last_coffee
+    text = strfdelta(time_past,
                      'It has been *{hours}* hours, \
                      *{minutes}* minutes \n'
                      'and *{seconds}* seconds\n'
                      'Since the last coffee has been made\n'
                      '_But who\'s counting_'
                      )  # {days} days {hours}:{minutes}:{seconds}'
-    if (cm.state is not None):
-        text += f"\n\n*State*: {cm.strState()}"
+    if cm.state is not None:
+        text += f"\n\n*State*: {cm.str_state()}"
 
     update.message.reply_text(text, parse_mode="Markdown")
 
 
-def updateCoffeeState(context):
+def update_coffee_state(context):
+    """Check the state of the coffee machine"""
+    del context  # unused
+
     def action(state):
-        return {
-            cm.State.BREWING: send("Coffee is being brewed"),
-            cm.State.READY: send("Coffee is ready"),
-            cm.State.OFF: send("Coffee machine has been shut off"),
-            cm.State.ERROR: send("Coffee machine is malfunctioning"),
-        }[state]
-    action(cm.checkState())
+        if state is not None:
+            return {
+                cm.State.BREWING: send("Coffee is being brewed"),
+                cm.State.READY: send("Coffee is ready"),
+                cm.State.OFF: send("Coffee machine has been shut off"),
+                cm.State.ERROR: send("Coffee machine is malfunctioning"),
+            }[state]
+    logger.debug('The is state is %s', cm.check_state())
+    action(cm.check_state())
 
 
-def machineOff(context):
-    logger.debug(f"checking if the machine is off - State = {cm.state}")
-    if not(cm.state == cm.State.OFF):
+def machine_off(context):
+    """Check if the coffee machine has been turned off"""
+    del context  # unused
+    logger.debug("checking if the machine is off - State = %s", cm.state)
+    if cm.state != cm.State.OFF:
         logger.debug("Machine is still on sending message")
         send("The coffee machine is still on")
 
 
-def updateReddit(context):
-    jokes.updateRedditDB()
+def update_reddit(context):
+    """Update the reddit dataase"""
+    del context  # unused
+    update_reddit_db()
 
 
 # Conversation handlers
@@ -543,7 +566,7 @@ CHOOSING, CHECK = range(2)
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
-        CHOOSING: [MessageHandler(Filters.regex('unsubscribe'), rm),
+        CHOOSING: [MessageHandler(Filters.regex('unsubscribe'), remove),
                    MessageHandler(Filters.regex('subscribe'), sub),
                    CommandHandler('cancel', cancel)],
         CHECK: [CommandHandler('cancel', cancel),
@@ -554,27 +577,31 @@ conv_handler = ConversationHandler(
 
 # Main Function
 def main():
+    """Main funcion"""
     # Displaying pin  configuration
-    logger.debug(f"Using pin {int(os.getenv('brewingPin'))} \
-        for brewing signal")
-    logger.debug(f"Using pin {int(os.getenv('heatingPin'))} \
-        for heating signal")
+    logger.debug("Using pin %i for brewing signal",
+                 int(os.getenv('brewingPin')))
+    logger.debug("Using pin %i for heating signal",
+                 int(os.getenv('heatingPin')))
 
     # Displaying password and PID
-    logger.debug(f"PID: {str(os.getpid())}")
-    logger.debug(f"This is the password: {password}")
+    logger.debug("PID: %s", str(os.getpid()))
+    logger.debug("This is the password: %s", str(PASSWORD))
 
     # Create the Updater and pass it your bot's token.
-    pp = PicklePersistence(filename=os.getenv('Telegram_db'))
+    pickle_persistence = PicklePersistence(filename=os.getenv('Telegram_db'))
 
     updater = Updater(token=os.getenv('tokenTelegram'),
-                      persistence=pp,
+                      persistence=pickle_persistence,
                       use_context=True,
                       user_sig_handler=shutdown)
 
     def restart(update, context):
+        """Restart the telegram bot"""
+        del context  # unused
         user = update.message.from_user
-        logger.debug(f"{user.first_name} hast triggered a restat of the bot")
+        logger.debug("%s hast triggered a restat of the bot",
+                     user.first_name)
         update.message.reply_text('Bot is restarting...')
         Thread(target=stop_and_restart).start()
 
@@ -583,34 +610,34 @@ def main():
             and replace the current process with a new one"""
         updater.stop()
         os.execl(sys.executable, sys.executable, *sys.argv)
-    jq = updater.job_queue
+    job_queue = updater.job_queue
 
     # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+    dispatcher = updater.dispatcher
     # log all errors
-    dp.add_error_handler(error)
+    dispatcher.add_error_handler(error)
 
-    dp.add_handler(conv_handler)
-    dp.add_handler(CommandHandler('pw', getPW))
-    dp.add_handler(CommandHandler('new', newPW))
-    dp.add_handler(CommandHandler('help', help))
-    dp.add_handler(CommandHandler('news', newsOrnot))
-    dp.add_handler(CommandHandler('time', timeSinceCoffee))
-    dp.add_handler(CallbackQueryHandler(button))
-    dp.add_handler(CommandHandler('error', err))
-    dp.add_handler(CommandHandler('restart',
-                                  restart,
-                                  filters=Filters.user(
-                                      username=os.getenv('sysadmin'))))
+    dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(CommandHandler('pw', get_pw))
+    dispatcher.add_handler(CommandHandler('new', new_pw))
+    dispatcher.add_handler(CommandHandler('help', help_message))
+    dispatcher.add_handler(CommandHandler('news', news_or_not))
+    dispatcher.add_handler(CommandHandler('time', time_since_coffee))
+    dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(CommandHandler('error', err))
+    dispatcher.add_handler(CommandHandler('restart',
+                                          restart,
+                                          filters=Filters.user(
+                                              username=os.getenv('sysadmin'))))
 
     # Seduled eventes
-    jq.run_repeating(updateCoffeeState, interval=2, first=0)
-    jq.run_repeating(machineOff,
-                     interval=datetime.timedelta(hours=24, minutes=0),
-                     first=datetime.time(hour=17, minute=0))
-    jq.run_repeating(updateReddit,
-                     interval=datetime.timedelta(hours=1, minutes=0),
-                     first=0)
+    job_queue.run_repeating(update_coffee_state, interval=2, first=0)
+    job_queue.run_repeating(machine_off,
+                            interval=datetime.timedelta(hours=24, minutes=0),
+                            first=datetime.time(hour=17, minute=0))
+    job_queue.run_repeating(update_reddit,
+                            interval=datetime.timedelta(hours=1, minutes=0),
+                            first=0)
 
     # Start the Bot
     updater.start_polling()
@@ -621,10 +648,8 @@ def main():
     updater.idle()
 
 
-"""
-Start of programm
-"""
 if __name__ == '__main__':
+
     # Make sure we are running at least Python 3
     if sys.version_info[0] < 3:
         raise Exception("Must be using Python 3")
@@ -632,27 +657,28 @@ if __name__ == '__main__':
     # Set up execution enviroment
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     logger.info('Startting program')
+    logger.info('Token is %s', PASSWORD)
 
     # Handel Passed arguments
-    if (args.eraseDB is True):
+    if command_line_args.eraseDB is True:
         logger.debug('Attempting to remove files for a clean start')
         files = set()  # A set of all files to be removed
         files.add(os.getenv('Telegram_db'))
-        for inst in storableSet.instances:
+        for inst in StorableSet.instances:
             files.add(inst.DB)
-        for inst in storableList.instances:
+        for inst in StorableList.instances:
             files.add(inst.DB)
         for file in files:
             try:
                 os.remove(file)
-                logger.debug(f"File '{file}' removed")
-            except Exception as e:
-                logger.error(f"Failed to remove file '{file}' \
-                    from hard drive\n{e}")
+                logger.debug("File '%s' removed", file)
+            except Exception as error_message:
+                logger.error("Failed to remove file '%s' from hard drive\n%s",
+                             file, error_message)
         logger.info("All possible files removed. Starting fresh")
-    if (args.mode is True):
-        logger.debug(f"Running in test mode olny the following User(s) \
-            will be contacted: {devs}")
+    if command_line_args.mode is True:
+        logger.debug("Running in test mode olny the following User(s) \
+            will be contacted: %s", devs)
         my_chat_ids = devs
     else:
         my_chat_ids.load()

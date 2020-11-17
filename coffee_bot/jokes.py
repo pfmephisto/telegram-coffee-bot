@@ -1,15 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# This program is dedicated to the public domain under the GNU GPLv3 license.
-
 """
 Discription to be added after reworking the file
 """
 
 import os
 import random
-import praw
 import logging
+import praw
 # import json
 
 logger = logging.getLogger(__name__)
@@ -136,36 +132,37 @@ gif_Lig = {
                 'https://media.giphy.com/media/qjfeT5XdAirCg/giphy.gif'
             ]
 }
-RedditBD = []
 
 
-"""
-Local DataBase
-"""
+class RedditDatabase():
+    """Class to store the reddit database in"""
+    values = []
+
+
+REDDIT_DB = RedditDatabase()
 
 
 def categories():
-    allTypes = []
-    for types in jokes_lib.keys():
-        allTypes.append(types)
-    return allTypes
+    """"Get all the category names"""
+    return list(jokes_lib.keys())
 
 
-def randomJoke(type="All"):
-
+def random_joke(joke_type="All"):
+    """Return a random joke"""
     # If no type has been supplied
-    if (type == "All"):
-        type = random.choice(categories())
+    if joke_type == "All":
+        joke_type = random.choice(categories())
 
-    for types in jokes_lib.keys():
-        if types == type:
-            return random.choice(jokes_lib[type])
+    for types in jokes_lib:
+        if types == joke_type:
+            return random.choice(jokes_lib[joke_type])
 
     # Else raise exception
     raise Exception("Type not present in Database")
 
 
-def formatJoke(joke):
+def format_joke(joke):
+    """Format the joke"""
     if isinstance(joke, str):
         print(joke)
         return joke
@@ -176,89 +173,95 @@ def formatJoke(joke):
         return text
 
 
-"""
-REDIT SECTION
-"""
-id = os.getenv('Reddit_id')
-sc = os.getenv('Reddit_secret')
-un = os.getenv('Reddit_user')
-pw = os.getenv('Reddit_password')
-ua = os.getenv('Reddit_user_agent')
+reddit_id = os.getenv('Reddit_id')
+reddit_secret = os.getenv('Reddit_secret')
+reddit_user_name = os.getenv('Reddit_user')
+reddit_password = os.getenv('Reddit_password')
+reddit_user_agent = os.getenv('Reddit_user_agent')
 
 reddit = praw.Reddit(
-    client_id=id, client_secret=sc, password=pw, user_agent=ua, username=un)
+    client_id=reddit_id,
+    client_secret=reddit_secret,
+    #  password=reddit_password,
+    user_agent=reddit_user_agent,
+    #  username=reddit_user_name
+    )
 
 
 def subredit_hot(subredit, limit=10):
-    s = reddit.subreddit(subredit).hot(limit=limit)
-    return s
+    """Retrive results from subreddit"""
+    subreddit = reddit.subreddit(subredit).hot(limit=limit)
+    return subreddit
 
 
-def maybeNews():
-
-    if (len(RedditBD) == 0):
+def maybe_news():
+    """Is the news games"""
+    if len(REDDIT_DB.values) == 0:
         logger.debug("Local cache seems to be missing Updating from source")
         posts = []
         choice = random.choice(['TheOnion', 'nottheonion'])
-        for r in subredit_hot(choice, limit=20):
-            if not r.stickied:
-                posts.append(r)
-        p = random.choice(posts)
+        for result in subredit_hot(choice, limit=20):
+            if not result.stickied:
+                posts.append(result)
+        post = random.choice(posts)
 
         truth = ""
-        if (choice == 'TheOnion'):
+        if choice == 'TheOnion':
             truth = "False"
-        if (choice == 'nottheonion'):
+        if choice == 'nottheonion':
             truth = "True"
-        dict = {'headline': p.title, 'truth': truth, 'url': p.permalink}
-        return dict
+        dict_result = {'headline': post.title,
+                       'truth': truth,
+                       'url': post.permalink}
+        return dict_result
 
     logger.debug("Using local Cache")
-    return random.choice(RedditBD)
+    return random.choice(REDDIT_DB)
 
 
-def updateRedditDB(list=['TheOnion', 'nottheonion']):
+def update_reddit_db(list_names=None):
+    """Update the reddit database"""
+    if list_names is None:
+        list_names = ['TheOnion', 'nottheonion']
     logger.debug("Updating the local reddit DB")
-    global RedditBD
-    RedditBD = []
 
     posts = []
     dicts = []
     # Getting the posts
-    for text in list:
+    for text in list_names:
         sub = subredit_hot(text, limit=20)
-        for r in sub:
-            if not r.stickied:
-                posts.append(r)
+        for result in sub:
+            if not result.stickied:
+                posts.append(result)
     # Formatiing the dict
-    for p in posts:
+    for post in posts:
         truth = ""
-        dict = {'headline': p.title, 'truth': truth, 'url': p.permalink}
-        dicts.append(dict)
+        result_dict = {'headline': post.title,
+                       'truth': truth, 'url': post.permalink}
+        dicts.append(result_dict)
 
-    RedditBD = dicts
-
-
-"""
-GIF
-"""
+    REDDIT_DB.values = dicts
 
 
-def categoriesGIF():
-    allTypes = []
-    for types in gif_Lig.keys():
-        allTypes.append(types)
-    return allTypes
+def categories_gif():
+    """Get the catigories of the gifs"""
+    all_types = []
+    for types in gif_Lig:
+        all_types.append(types)
+    return all_types
 
 
-def randomGIF(type="All"):
+def random_gif(joke_type=None):
+    """Retrive a random gif"""
+    if joke_type is None:
+        joke_type = "All"
     # If no type has been supplied
-    if (type == "All"):
-        type = random.choice(categoriesGIF())
+    if joke_type == "All":
+        joke_type = random.choice(categories_gif())
 
-    for types in gif_Lig.keys():
-        if types == type:
-            return random.choice(gif_Lig[type])
+    for types in gif_Lig:
+        if types == joke_type:
+            return random.choice(gif_Lig[joke_type])
 
     # Else raise exception
     raise Exception("Type not present in Database")

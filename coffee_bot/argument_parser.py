@@ -1,32 +1,36 @@
+"""Set up the arguments to be passed to the coffee bot"""
+
 import argparse
 from argparse import ArgumentParser
 import logging
 
 
 # Add ArgumentParser
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+def str2bool(value):
+    """Convert a string to a boolean"""
+    if isinstance(value, bool):
+        return value
+    if value.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif value.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def loglevel(v):
-    if isinstance(v, int):
-        return v
-    if (v == "DEBUG"):
+def loglevel(value):
+    """Set the logging level based on a string"""
+    if isinstance(value, int):
+        return value
+    if value == "DEBUG":
         return logging.DEBUG
-    if (v == "INFO"):
+    if value == "INFO":
         return logging.INFO
-    if (v == "WARNING"):
+    if value == "WARNING":
         return logging.WARNING
-    if (v == "ERROR"):
+    if value == "ERROR":
         return logging.ERROR
-    if (v == "CRITICAL"):
+    if value == "CRITICAL":
         return logging.CRITICAL
     else:
         return logging.INFO
