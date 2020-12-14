@@ -236,11 +236,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:8763f35908d694e08a33a9d9354fc74751a50e1410d2006b2c595797ff7c87f6",
-                "sha256:958432bb3849d3e1fecfb45e211832a579fb4340a1d2b21b0d1a7d30407e39ec"
+                "sha256:4695ff737692f745c2e44f1f22996b415ce7715d7e764e27b0528fb61d30cefb",
+                "sha256:5e4eedbd81baeae2187e8bc81f3d3880d965914a46ce3855850076496c53f634"
             ],
             "index": "pypi",
-            "version": "==1.17.5"
+            "version": "==1.18.2"
         },
         "tornado": {
             "hashes": [
@@ -482,11 +482,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:8763f35908d694e08a33a9d9354fc74751a50e1410d2006b2c595797ff7c87f6",
-                "sha256:958432bb3849d3e1fecfb45e211832a579fb4340a1d2b21b0d1a7d30407e39ec"
+                "sha256:4695ff737692f745c2e44f1f22996b415ce7715d7e764e27b0528fb61d30cefb",
+                "sha256:5e4eedbd81baeae2187e8bc81f3d3880d965914a46ce3855850076496c53f634"
             ],
             "index": "pypi",
-            "version": "==1.17.5"
+            "version": "==1.18.2"
         },
         "toml": {
             "hashes": [
