@@ -153,11 +153,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:3f9eec75a6bcf6c42f20d08bb0f4908c87a15c8d8797bbb737fd27834c3a8777",
-                "sha256:41fea16755897c91a2d1a90b4c6d178dad06746650230c3adf5d7fb2e285f1d3"
+                "sha256:8ce569183ea0824133c263b6ea3ae98224608fd319a2ada4f98387e31a3ee51a",
+                "sha256:9cf0eb0153153f43f2dcb5d9bdcffdee1aa4c3a0a4cbc99ecdd832cea1ab3923"
             ],
             "index": "pypi",
-            "version": "==1.20"
+            "version": "==1.21"
         },
         "tornado": {
             "hashes": [
@@ -228,10 +228,10 @@
         },
         "websocket-client": {
             "hashes": [
-                "sha256:0fc45c961324d79c781bab301359d5a1b00b13ad1b10415a4780229ef71a5549",
-                "sha256:d735b91d6d1692a6a181f2a8c9e0238e5f6373356f561bb9dc4c7af36f452010"
+                "sha256:44b5df8f08c74c3d82d28100fdc81f4536809ce98a17f0757557813275fbb663",
+                "sha256:63509b41d158ae5b7f67eb4ad20fecbb4eee99434e73e140354dc3ff8e09716f"
             ],
-            "version": "==0.57.0"
+            "version": "==0.58.0"
         }
     },
     "develop": {
@@ -395,11 +395,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:3f9eec75a6bcf6c42f20d08bb0f4908c87a15c8d8797bbb737fd27834c3a8777",
-                "sha256:41fea16755897c91a2d1a90b4c6d178dad06746650230c3adf5d7fb2e285f1d3"
+                "sha256:8ce569183ea0824133c263b6ea3ae98224608fd319a2ada4f98387e31a3ee51a",
+                "sha256:9cf0eb0153153f43f2dcb5d9bdcffdee1aa4c3a0a4cbc99ecdd832cea1ab3923"
             ],
             "index": "pypi",
-            "version": "==1.20"
+            "version": "==1.21"
         },
         "toml": {
             "hashes": [
