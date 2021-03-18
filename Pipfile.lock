@@ -117,11 +117,11 @@
         },
         "python-telegram-bot": {
             "hashes": [
-                "sha256:770d6c19f75e530de7f6a8784ec06945da84bcd2344a72932b8c2a05a78cd421",
-                "sha256:8b5790cdbd5794da5ee06eb8d0a00a81e3f48b0e04b4d0e33874d45a2495c221"
+                "sha256:467b0f149bf4d0b9b638530c9a887dd0d6e64da1d5603cfe6eee839671ca1496",
+                "sha256:4c1fdc3dab192bf1f754ccd0692511976b38e2c6ad75010e30844a19c0193c90"
             ],
             "index": "pypi",
-            "version": "==13.3"
+            "version": "==13.4.1"
         },
         "pytz": {
             "hashes": [
@@ -228,10 +228,10 @@
         },
         "websocket-client": {
             "hashes": [
-                "sha256:0fc45c961324d79c781bab301359d5a1b00b13ad1b10415a4780229ef71a5549",
-                "sha256:d735b91d6d1692a6a181f2a8c9e0238e5f6373356f561bb9dc4c7af36f452010"
+                "sha256:44b5df8f08c74c3d82d28100fdc81f4536809ce98a17f0757557813275fbb663",
+                "sha256:63509b41d158ae5b7f67eb4ad20fecbb4eee99434e73e140354dc3ff8e09716f"
             ],
-            "version": "==0.57.0"
+            "version": "==0.58.0"
         }
     },
     "develop": {
