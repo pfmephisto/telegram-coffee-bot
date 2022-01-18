@@ -46,10 +46,10 @@
         },
         "emoji": {
             "hashes": [
-                "sha256:53d61a8e4c025f6c295ab99c842302c66d47952199c4fde66dd060dee3ad4324"
+                "sha256:cc28bdc1010b1c03c241f69c7af1e8715144ef45a273bfadc14dc89319ba26d0"
             ],
             "index": "pypi",
-            "version": "==1.6.1"
+            "version": "==1.6.3"
         },
         "fake-rpi": {
             "hashes": [
