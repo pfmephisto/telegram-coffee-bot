@@ -183,11 +183,11 @@
         },
         "setuptools": {
             "hashes": [
-                "sha256:41fa68ecac9e099122990d7437bc10683b966c32a591caa2824dffcffd5dea7a",
-                "sha256:97a4a824325146ebc8dc29b0aa5f3b1eaa590a0f00cacbfdf81831670f07862d"
+                "sha256:57f6f22bde4e042978bcd50176fdb381d7c21a9efa4041202288d3737a0c6a54",
+                "sha256:a7620757bf984b58deaf32fc8a4577a9bbc0850cf92c20e1ce41c38c19e5fb75"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==65.6.2"
+            "version": "==65.6.3"
         },
         "six": {
             "hashes": [
@@ -199,11 +199,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:8df802aad2d11f7198f1d5b1d84c7498ef19c28e160041dcb8aaf0814f91115b",
-                "sha256:a085348801bd62db79ad75c9a67c5c8312507b113f0228b92e2dd4397edc7c1d"
+                "sha256:148ac8c27908853d5d8a116d55ce947e9ba167bb697c75226ae95645b2e5a504",
+                "sha256:de7a1619110a2c06390fb5340839c6503c6b108b5f1a2f3bbe1ef60f02cecacb"
             ],
             "index": "pypi",
-            "version": "==1.25.4"
+            "version": "==1.26.0"
         },
         "tornado": {
             "hashes": [
@@ -337,7 +337,7 @@
                 "sha256:6f62d78e2f89b4500b080fe3a81690850cd254227f27f75c3a0c491a1f351ba7",
                 "sha256:e8443a5e7a020e9d7f97f1d7d9cd17c88bcb3bc7e218bf9cf5095fe550be2951"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.6.1'",
+            "markers": "python_version < '4' and python_full_version >= '3.6.1'",
             "version": "==5.10.1"
         },
         "lazy-object-proxy": {
@@ -431,11 +431,11 @@
         },
         "pyflakes": {
             "hashes": [
-                "sha256:12da339341ba8b9071e185d4717bef732fdb4f4400b9f4a1d0d6bbc362bf7760",
-                "sha256:e38cbaa285564388a9622d7e440445d40c508d8fbf96e0c0f3ef28e47d8ba8a2"
+                "sha256:ec55bf7fe21fff7f1ad2f7da62363d749e2a470500eab1b555334b67aa1ef8cf",
+                "sha256:ec8b276a6b60bd80defed25add7e439881c19e64850afd9b346283d4165fd0fd"
             ],
             "markers": "python_version >= '3.6'",
-            "version": "==3.0.0"
+            "version": "==3.0.1"
         },
         "pylint": {
             "hashes": [
@@ -479,11 +479,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:8df802aad2d11f7198f1d5b1d84c7498ef19c28e160041dcb8aaf0814f91115b",
-                "sha256:a085348801bd62db79ad75c9a67c5c8312507b113f0228b92e2dd4397edc7c1d"
+                "sha256:148ac8c27908853d5d8a116d55ce947e9ba167bb697c75226ae95645b2e5a504",
+                "sha256:de7a1619110a2c06390fb5340839c6503c6b108b5f1a2f3bbe1ef60f02cecacb"
             ],
             "index": "pypi",
-            "version": "==1.25.4"
+            "version": "==1.26.0"
         },
         "tomlkit": {
             "hashes": [
