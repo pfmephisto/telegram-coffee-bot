@@ -144,11 +144,11 @@
         },
         "python-telegram-bot": {
             "hashes": [
-                "sha256:79abc66355af2310bbaaf7f41746230b996434e287f21f27070c92978dc0964f",
-                "sha256:e9391d43eb1123de2677a9d24ea878a9d5327d65b2419afba653f476d26aecc3"
+                "sha256:06780c258d3f2a3c6c79a7aeb45714f4cd1dd6275941b7dc4628bba64fddd465",
+                "sha256:b4047606b8081b62bbd6aa361f7ca1efe87fa8f1881ec9d932d35844bf57a154"
             ],
             "index": "pypi",
-            "version": "==13.14"
+            "version": "==13.15"
         },
         "pytz": {
             "hashes": [
@@ -337,7 +337,7 @@
                 "sha256:6f62d78e2f89b4500b080fe3a81690850cd254227f27f75c3a0c491a1f351ba7",
                 "sha256:e8443a5e7a020e9d7f97f1d7d9cd17c88bcb3bc7e218bf9cf5095fe550be2951"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.6.1'",
+            "markers": "python_version < '4' and python_full_version >= '3.6.1'",
             "version": "==5.10.1"
         },
         "lazy-object-proxy": {
