@@ -276,11 +276,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:613bae42acb5f2eeb1a0b92614e323021c66f374db62adf9826ea0c2c9120bb1",
-                "sha256:893c10f133974fba4c53eb1736b6514d596d1cd94c83436a711f3345df945199"
+                "sha256:b3990ec22351a3f3e1af376729c985025bbdd3bdabdde8c156112c3d3dfe1941",
+                "sha256:edc42fd58b8e1569830d3ead564cafa60fd51d684f03ee2a1fdd5f77a5a10438"
             ],
             "index": "pypi",
-            "version": "==1.28.2"
+            "version": "==1.28.5"
         },
         "update-checker": {
             "hashes": [
@@ -495,11 +495,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:613bae42acb5f2eeb1a0b92614e323021c66f374db62adf9826ea0c2c9120bb1",
-                "sha256:893c10f133974fba4c53eb1736b6514d596d1cd94c83436a711f3345df945199"
+                "sha256:b3990ec22351a3f3e1af376729c985025bbdd3bdabdde8c156112c3d3dfe1941",
+                "sha256:edc42fd58b8e1569830d3ead564cafa60fd51d684f03ee2a1fdd5f77a5a10438"
             ],
             "index": "pypi",
-            "version": "==1.28.2"
+            "version": "==1.28.5"
         },
         "tomlkit": {
             "hashes": [
