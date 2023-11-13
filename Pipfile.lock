@@ -280,11 +280,11 @@
         },
         "telethon": {
             "hashes": [
-                "sha256:a7efe0da9002e545236d636833e29e1be460e268d20ca49d03f8b9e8c9dab82a"
+                "sha256:9896c0d7386121e8e67cf9a20c3aa4743e33cb24253f924e2fc1397df0281890"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.5'",
-            "version": "==1.32.0"
+            "version": "==1.32.1"
         },
         "update-checker": {
             "hashes": [
